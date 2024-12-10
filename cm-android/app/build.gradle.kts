@@ -73,4 +73,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
+    implementation("com.google.firebase:firebase-database")
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    // camera X
+    val camerax_version = "1.5.0-alpha03"
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
+
 }

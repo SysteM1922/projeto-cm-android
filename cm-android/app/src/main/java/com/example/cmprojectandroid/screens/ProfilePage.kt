@@ -5,14 +5,32 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.example.cmprojectandroid.navigation.NavRoutes
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.cmprojectandroid.viewmodels.TestDataViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfilePage(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
+
+    val testDataViewModel: TestDataViewModel = viewModel()
+    val coroutineScope = rememberCoroutineScope()
+
+    // Start updating the message every second
+    LaunchedEffect(Unit) {
+        var counter = 0
+        while (true) {
+            val newMessage = "Message number: $counter (time: ${System.currentTimeMillis()})"
+            testDataViewModel.updateMessage(newMessage)
+            counter++
+            delay(1000) // wait 1 second before updating again
+        }
+    }
 
     Column(
         modifier = Modifier

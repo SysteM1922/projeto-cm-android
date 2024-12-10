@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
+import com.example.cmprojectandroid.screens.HelloWorldPage
 import com.example.cmprojectandroid.screens.LoginPage
 import com.example.cmprojectandroid.screens.SignUpPage
 import com.example.cmprojectandroid.screens.MapPage
@@ -70,8 +71,13 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
             MapPage()
         }
         composable(BottomNavItem.ScanQRCode.route) {
-            ScanQRCodePage()
+            ScanQRCodePage(navController = navController)
         }
+
+        composable("hello_page") {
+            HelloWorldPage()
+        }
+
         composable(BottomNavItem.NFCPage.route) {
             NFCPage()
         }
