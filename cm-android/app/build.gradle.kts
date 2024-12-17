@@ -84,7 +84,7 @@ dependencies {
     implementation("androidx.camera:camera-view:${camerax_version}")
 
     // Google Maps Compose library
-    implementation(libs.maps.compose)
+    implementation("com.google.maps.android:maps-compose:6.2.1")
     // Google Maps Compose utility library
     implementation(libs.maps.compose.utils)
     // Google Maps Compose widgets library
