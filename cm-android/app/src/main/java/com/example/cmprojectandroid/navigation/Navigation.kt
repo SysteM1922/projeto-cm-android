@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
@@ -79,7 +80,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         }
 
         composable(BottomNavItem.NFCPage.route) {
-            NFCPage()
+            NFCPage(context = LocalContext.current)
         }
         composable(BottomNavItem.Profile.route) {
             ProfilePage(navController)

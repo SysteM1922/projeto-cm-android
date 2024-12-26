@@ -1,7 +1,8 @@
 package com.example.cmprojectandroid.screens
 
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.DisposableEffect
+import android.content.Context
+import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,31 +12,31 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.cmprojectandroid.R
 
 import com.example.cmprojectandroid.services.HCEService
 
 @Composable
-fun NFCPage() {
-
-    val hceService = HCEService()
+fun NFCPage(context: Context) {
 
     LaunchedEffect(Unit) {
-        hceService.onStartCommand(null, 0, 0)
-        println("Service started");
+        Log.d("NFCPage", "Starting HCEService")
+        val intent = Intent(context, HCEService::class.java)
+        context.startService(intent)
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            hceService.onDeactivated(0)
-            println("Service stopped");
+            val intent = Intent(context, HCEService::class.java)
+            context.stopService(intent)
         }
     }
 
@@ -68,10 +69,4 @@ fun NFCPage() {
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun NFCPagePreview() {
-    NFCPage()
 }
