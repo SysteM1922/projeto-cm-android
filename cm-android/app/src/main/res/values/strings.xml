@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">CmProjectAndroid</string>
+    <string name="servicedesc">HCE Service</string>
+    <string name="aiddescription">AID Group</string>
 </resources>
