@@ -1,7 +1,10 @@
 package com.example.cmprojectandroid.screens
 
+import android.app.Activity.MODE_PRIVATE
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -27,18 +30,25 @@ import com.example.cmprojectandroid.services.HCEService
 @Composable
 fun NFCPage(context: Context) {
 
-    val intent = Intent(context, HCEService::class.java)
-    intent.putExtra("content", "Hello world.")
+    val packageManager = context.packageManager
 
     LaunchedEffect(Unit) {
+        packageManager.setComponentEnabledSetting(
+            ComponentName(context, HCEService::class.java),
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+            PackageManager.DONT_KILL_APP
+        )
         Log.d("HCEService", "Starting HCEService")
-        context.startService(intent)
     }
 
     DisposableEffect(Unit) {
         onDispose {
+            packageManager.setComponentEnabledSetting(
+                ComponentName(context, HCEService::class.java),
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP
+            )
             Log.d("HCEService", "Stopping HCEService")
-            context.stopService(intent)
         }
     }
 
