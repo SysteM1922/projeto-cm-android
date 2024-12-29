@@ -27,15 +27,17 @@ import com.example.cmprojectandroid.services.HCEService
 @Composable
 fun NFCPage(context: Context) {
 
+    val intent = Intent(context, HCEService::class.java)
+    intent.putExtra("content", "Hello world.")
+
     LaunchedEffect(Unit) {
-        Log.d("NFCPage", "Starting HCEService")
-        val intent = Intent(context, HCEService::class.java)
+        Log.d("HCEService", "Starting HCEService")
         context.startService(intent)
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            val intent = Intent(context, HCEService::class.java)
+            Log.d("HCEService", "Stopping HCEService")
             context.stopService(intent)
         }
     }

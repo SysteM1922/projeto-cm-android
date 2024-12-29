@@ -76,6 +76,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         composable(BottomNavItem.Map.route) {
             MapPage()
         }
+
         composable(BottomNavItem.ScanQRCode.route) {
             ScanQRCodePage(navController = navController)
         }
@@ -87,6 +88,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         composable(BottomNavItem.NFCPage.route) {
             NFCPage(context)
         }
+
         composable(BottomNavItem.Profile.route) {
             ProfilePage(navController)
         }
