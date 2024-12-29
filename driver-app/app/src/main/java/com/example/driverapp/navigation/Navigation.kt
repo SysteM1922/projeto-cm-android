@@ -1,4 +1,4 @@
-package com.example.cmprojectandroid.navigation
+package com.example.driverapp.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
@@ -8,18 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.example.cmprojectandroid.R
-import com.example.cmprojectandroid.screens.HelloWorldPage
-import com.example.cmprojectandroid.screens.LoginPage
-import com.example.cmprojectandroid.screens.SignUpPage
-import com.example.cmprojectandroid.screens.MapPage
-import com.example.cmprojectandroid.screens.NFCPage
-import com.example.cmprojectandroid.screens.ProfilePage
-import com.example.cmprojectandroid.screens.ScanQRCodePage
+import com.example.driverapp.screens.HelloWorldPage
+import com.example.driverapp.screens.LoginPage
+import com.example.driverapp.screens.SignUpPage
+import com.example.driverapp.screens.NFCReaderPage
+import com.example.driverapp.screens.ProfilePage
 
 object NavRoutes {
     const val Login = "login"
@@ -28,8 +24,8 @@ object NavRoutes {
 
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    data object Map : BottomNavItem("map", "Map", Icons.Default.Star)
-    data object ScanQRCode : BottomNavItem("scan_qrcode", "Scan QR Code", Icons.Default.Star)
+    data object Map : BottomNavItem("hello_world", "Hello World", Icons.Default.Star)
+    data object ScanQRCode : BottomNavItem("hello_world", "Hello World", Icons.Default.Star)
     data object NFCPage : BottomNavItem("nfc_page", "NFC Page", Icons.Default.Star)
     data object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
 }
@@ -74,18 +70,14 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         }
         // Main app destinations
         composable(BottomNavItem.Map.route) {
-            MapPage()
+            HelloWorldPage()
         }
         composable(BottomNavItem.ScanQRCode.route) {
-            ScanQRCodePage(navController = navController)
-        }
-
-        composable("hello_page") {
             HelloWorldPage()
         }
 
         composable(BottomNavItem.NFCPage.route) {
-            NFCPage(context)
+            NFCReaderPage()
         }
         composable(BottomNavItem.Profile.route) {
             ProfilePage(navController)
