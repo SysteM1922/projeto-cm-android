@@ -38,7 +38,6 @@ fun NFCReaderPage() {
     val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
     val lifecycleScope = rememberCoroutineScope()
     var isNfcEnabled by remember { mutableStateOf(false) }
-    var nfcStatus by remember { mutableStateOf(false) }
     var showModal by remember { mutableStateOf(false) }
     val navController = rememberNavController()
 
@@ -53,7 +52,6 @@ fun NFCReaderPage() {
                     checkNfcStatus()
                     if (!isNfcEnabled) {
                         showModal = true
-                    } else if (!nfcStatus) {
                     }
                     delay(500)
                 }
@@ -89,7 +87,7 @@ fun NFCReaderPage() {
                     TextButton(
                         onClick = {
                             showModal = false
-                            navController.navigate("map")
+                            navController.navigate("hello_world")
                         }
                     ) {
                         Text("Cancel")
