@@ -16,6 +16,7 @@ import com.example.driverapp.screens.LoginPage
 import com.example.driverapp.screens.SignUpPage
 import com.example.driverapp.screens.NFCReaderPage
 import com.example.driverapp.screens.ProfilePage
+import com.example.driverapp.viewmodels.NFCViewModel
 
 object NavRoutes {
     const val Login = "login"
@@ -77,7 +78,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         }
 
         composable(BottomNavItem.NFCPage.route) {
-            NFCReaderPage()
+            NFCReaderPage(NFCViewModel())
         }
         composable(BottomNavItem.Profile.route) {
             ProfilePage(navController)

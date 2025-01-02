@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">CmProjectAndroid</string>
-    <string name="servicedesc">servicedesc</string>
-    <string name="aiddescription">aiddescription</string>
+    <string name="app_name" translatable="false">BusTracker</string>
+    <string name="servicedesc" translatable="false">servicedesc</string>
+    <string name="aiddescription" translatable="false">aiddescription</string>
 </resources>

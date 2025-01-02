@@ -8,12 +8,14 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.nfc.NfcAdapter
 import android.nfc.Tag
+import android.nfc.tech.Ndef
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -28,15 +30,16 @@ import com.example.driverapp.navigation.BottomNavigationBar
 import com.example.driverapp.navigation.NavRoutes
 import com.example.driverapp.navigation.NavigationHost
 import com.example.driverapp.ui.theme.DriverAppTheme
+import com.example.driverapp.viewmodels.NFCViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 const val NFC_READER_OPENED = "com.example.driverapp.NFC_READER_OPENED"
 const val NFC_READER_CLOSED = "com.example.driverapp.NFC_READER_CLOSED"
-const val INTENT_ACTION_NFC_READ: String = "com.example.driverapp.INTENT_ACTION_NFC_READ"
 
 class MainActivity : ComponentActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
+    private val sharedViewModel: NFCViewModel by viewModels()
 
     private val nfcReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -108,31 +111,42 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         Log.d("MainActivity", "onResume")
-        super.onResume()
         enableNfcForegroundDispatch()
+        super.onResume()
     }
 
     override fun onPause() {
         Log.d("MainActivity", "onPause")
-        super.onPause()
         disableNfcForegroundDispatch()
+        super.onPause()
     }
 
     override fun onNewIntent(intent: Intent) {
         Log.d("MainActivity", "New NFC Intent")
+
         super.onNewIntent(intent)
-        intent.let { nfcIntent ->
-            sendBroadcast(Intent(INTENT_ACTION_NFC_READ).apply {
-                putExtra(
-                    NfcAdapter.EXTRA_TAG,
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        nfcIntent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
-                    } else {
-                        nfcIntent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
-                    }
-                )
-                setPackage(packageName)
-            })
+        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        } else {
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        }
+
+        tag?.let {
+            val ndef = Ndef.get(it)
+            ndef?.connect()
+            val ndefMessage = ndef?.ndefMessage
+            ndef?.close()
+
+            ndefMessage?.let { message ->
+                for (record in message.records) {
+                    val payload = String(record.payload).substring(3)
+                    Log.d("NFC", "NDEF Record: $payload")
+                    sharedViewModel.setCardID(payload)
+                    Thread.sleep(1000)
+                    sharedViewModel.setCardID("")
+                    // Aqui você pode processar o payload conforme necessário
+                }
+            }
         }
     }
 
