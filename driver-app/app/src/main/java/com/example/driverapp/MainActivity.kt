@@ -1,17 +1,13 @@
 package com.example.driverapp
 
-import android.annotation.SuppressLint
-import android.app.PendingIntent
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.nfc.FormatException
+import android.nfc.NdefMessage
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.Ndef
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,26 +28,13 @@ import com.example.driverapp.navigation.NavigationHost
 import com.example.driverapp.ui.theme.DriverAppTheme
 import com.example.driverapp.viewmodels.NFCViewModel
 import com.google.firebase.auth.FirebaseAuth
+import java.io.IOException
 
-const val NFC_READER_OPENED = "com.example.driverapp.NFC_READER_OPENED"
-const val NFC_READER_CLOSED = "com.example.driverapp.NFC_READER_CLOSED"
+class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 
-class MainActivity : ComponentActivity() {
+    val sharedViewModel: NFCViewModel by viewModels()
+    var nfcAdapter: NfcAdapter? = null
 
-    private var nfcAdapter: NfcAdapter? = null
-    private val sharedViewModel: NFCViewModel by viewModels()
-
-    private val nfcReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                NFC_READER_OPENED -> enableNfcForegroundDispatch()
-                NFC_READER_CLOSED -> disableNfcForegroundDispatch()
-            }
-            Log.d("MainActivity", "NFC Receiver: ${intent?.action}")
-        }
-    }
-
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -63,96 +46,96 @@ class MainActivity : ComponentActivity() {
                 MainScreen()
             }
         }
-
-        val filter = IntentFilter().apply {
-            addAction(NFC_READER_OPENED)
-            addAction(NFC_READER_CLOSED)
-        }
-        registerReceiver(nfcReceiver, filter)
-
-        sendBroadcast(Intent(NFC_READER_CLOSED))
-    }
-
-    fun enableNfcForegroundDispatch() {
-        nfcAdapter?.let { adapter ->
-            if (adapter.isEnabled) {
-                val nfcIntentFilter = arrayOf(
-                    IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED),
-                    IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED),
-                    IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED)
-                )
-
-                val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    PendingIntent.getActivity(
-                        this,
-                        0,
-                        Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-                        PendingIntent.FLAG_MUTABLE
-                    )
-                } else {
-                    PendingIntent.getActivity(
-                        this,
-                        0,
-                        Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                    )
-                }
-                adapter.enableForegroundDispatch(
-                    this, pendingIntent, nfcIntentFilter, null
-                )
-            }
-        }
-    }
-
-    fun disableNfcForegroundDispatch() {
-        Log.d("MainActivity", "Disabling NFC Foreground Dispatch")
-        nfcAdapter?.disableForegroundDispatch(this)
     }
 
     override fun onResume() {
-        Log.d("MainActivity", "onResume")
-        enableNfcForegroundDispatch()
         super.onResume()
+        if (nfcAdapter != null) {
+            val options = Bundle()
+            // Work around for some broken Nfc firmware implementations that poll the card too fast
+            options.putInt(NfcAdapter.EXTRA_READER_PRESENCE_CHECK_DELAY, 250)
+
+            // Enable ReaderMode for all types of card and disable platform sounds
+            nfcAdapter!!.enableReaderMode(
+                this,
+                this,
+                NfcAdapter.FLAG_READER_NFC_A or
+                        NfcAdapter.FLAG_READER_NFC_B or
+                        NfcAdapter.FLAG_READER_NFC_F or
+                        NfcAdapter.FLAG_READER_NFC_V or
+                        NfcAdapter.FLAG_READER_NFC_BARCODE or
+                        NfcAdapter.FLAG_READER_NO_PLATFORM_SOUNDS,
+                options
+            )
+        }
     }
 
     override fun onPause() {
-        Log.d("MainActivity", "onPause")
-        disableNfcForegroundDispatch()
         super.onPause()
+        if (nfcAdapter != null) nfcAdapter!!.disableReaderMode(this)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        Log.d("MainActivity", "New NFC Intent")
-
-        super.onNewIntent(intent)
-        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
-        } else {
-            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+    override fun onTagDiscovered(tag: Tag?) {
+        Log.d("ReadNFCActivity", sharedViewModel.isNFCPageVisible.toString())
+        if (!sharedViewModel.isNFCPageVisible) {
+            return
         }
 
-        tag?.let {
-            val ndef = Ndef.get(it)
-            ndef?.connect()
-            val ndefMessage = ndef?.ndefMessage
-            ndef?.close()
+        val ndef = Ndef.get(tag)
+        if (ndef != null) {
+            try {
+                ndef.connect()
+                // Check if the tag is NDEF formatted
+                if (ndef.isConnected) {
+                    val ndefMessage = ndef.ndefMessage
+                    parserNDEFMessage(ndefMessage)
+                    // Iterate through NDEF records to extract data
+                    for (record in ndefMessage.records) {
+                        // Assuming the record contains text
+                        val payload = record.payload
+                        // Decode payload to string using UTF-8 encoding
+                        val text = String(payload, charset("UTF-8"))
 
-            ndefMessage?.let { message ->
-                for (record in message.records) {
-                    val payload = String(record.payload).substring(3)
-                    Log.d("NFC", "NDEF Record: $payload")
-                    sharedViewModel.setCardID(payload)
-                    Thread.sleep(1000)
-                    sharedViewModel.setCardID("")
-                    // Aqui você pode processar o payload conforme necessário
+                        // Do something with the read text
+                        runOnUiThread {
+                            Toast.makeText(
+                                applicationContext,
+                                "Read NFC Tag: $text",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                } else {
+                    // Tag is not NDEF formatted
+                    runOnUiThread {
+                        Toast.makeText(
+                            applicationContext,
+                            "NFC Tag is not NDEF formatted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: IOException) {
+                // Handle I/O exception
+                e.printStackTrace()
+            } catch (e: FormatException) {
+                // Handle FormatException
+                e.printStackTrace()
+            } finally {
+                // Close the connection
+                try {
+                    ndef.close()
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
             }
         }
     }
 
-    override fun onDestroy() {
-        unregisterReceiver(nfcReceiver)
-        super.onDestroy()
+    private fun parserNDEFMessage(messages: NdefMessage) {
+        val cardID = String(messages.records[0].payload, charset("UTF-8")).substring(3)
+        Log.d("ReadNFCActivity", "Card ID: $cardID")
+        sharedViewModel.cardID.value = cardID
     }
 }
 

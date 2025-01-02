@@ -1,15 +1,12 @@
 package com.example.driverapp.viewmodels
 
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 
 class NFCViewModel : ViewModel() {
-    private val _cardID = MutableLiveData<String>()
-    val cardID: LiveData<String> = _cardID
+    var isNFCPageVisible by mutableStateOf(false)
 
-    fun setCardID(cardID: String) {
-        _cardID.value = cardID
-    }
+    var cardID = mutableStateOf("")
 }

@@ -2,7 +2,6 @@ package com.example.driverapp.screens
 
 import android.content.Intent
 import android.nfc.NfcAdapter
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,15 +26,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.driverapp.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.example.driverapp.NFC_READER_CLOSED
-import com.example.driverapp.NFC_READER_OPENED
 import com.example.driverapp.viewmodels.NFCViewModel
 
 @Composable
-fun NFCReaderPage(sharedViewModel: NFCViewModel) {
+fun NFCReaderPage(viewModel: NFCViewModel = viewModel()) {
 
     val context = LocalContext.current
     val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
@@ -43,8 +41,7 @@ fun NFCReaderPage(sharedViewModel: NFCViewModel) {
     var isNfcEnabled by remember { mutableStateOf(false) }
     var showModal by remember { mutableStateOf(false) }
     var cardModal by remember { mutableStateOf(false) }
-    val cardID by sharedViewModel.cardID.observeAsState("")
-    var cardIDOld by remember { mutableStateOf("") }
+    var cardID by remember { mutableStateOf("") }
     val navController = rememberNavController()
 
     fun checkNfcStatus() {
@@ -52,6 +49,9 @@ fun NFCReaderPage(sharedViewModel: NFCViewModel) {
     }
 
     LaunchedEffect(Unit) {
+
+        viewModel.isNFCPageVisible = true
+
         lifecycleScope.launch {
             if (nfcAdapter != null) {
                 while (true) {
@@ -59,26 +59,15 @@ fun NFCReaderPage(sharedViewModel: NFCViewModel) {
                     if (!isNfcEnabled) {
                         showModal = true
                     }
-                    Log.d("NFCReaderPage", "NFC Card ID: $cardID")
-                    if (cardIDOld != cardID) {
-                        if (cardID != "") {
-                            cardModal = true
-                            cardIDOld = cardID
-                        } else {
-                            cardIDOld = ""
-                        }
-                    }
                     delay(500)
                 }
             }
         }
-
-        context.sendBroadcast(Intent(NFC_READER_OPENED))
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            context.sendBroadcast(Intent(NFC_READER_CLOSED))
+            viewModel.isNFCPageVisible = false
         }
     }
 
@@ -87,7 +76,7 @@ fun NFCReaderPage(sharedViewModel: NFCViewModel) {
             AlertDialog(
                 onDismissRequest = { cardModal = false },
                 title = { Text("Card ID") },
-                text = { Text(cardID) },
+                text = { Text(cardID ?: "") },
                 confirmButton = {
                     TextButton(
                         onClick = {
