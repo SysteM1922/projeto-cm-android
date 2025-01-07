@@ -140,6 +140,17 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 }
 
 
+object NFCParser {
+    // A utility function that extracts the card ID from an NDEF message
+    fun parseCardIDFromNdefMessage(ndefMessage: NdefMessage): String {
+        val payload = String(ndefMessage.records[0].payload, Charsets.UTF_8)
+        // Example: skipping the first 3 chars for language code (e.g. "en")
+        // You can adjust this to match your actual NFC data format.
+        return payload.substring(3)
+    }
+}
+
+
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()

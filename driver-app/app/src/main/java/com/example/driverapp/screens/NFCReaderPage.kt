@@ -1,6 +1,5 @@
 package com.example.driverapp.screens
 
-import android.content.Intent
 import android.nfc.NfcAdapter
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,35 +13,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.driverapp.R
+import com.example.driverapp.viewmodels.NFCViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.example.driverapp.viewmodels.NFCViewModel
 
 @Composable
-fun NFCReaderPage(viewModel: NFCViewModel = viewModel()) {
-
+fun NFCReaderPage(
+    viewModel: NFCViewModel = viewModel()
+) {
     val context = LocalContext.current
     val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
     val lifecycleScope = rememberCoroutineScope()
     var isNfcEnabled by remember { mutableStateOf(false) }
     var showModal by remember { mutableStateOf(false) }
     var cardModal by remember { mutableStateOf(false) }
-    var cardID by remember { mutableStateOf("") }
+    val cardID = viewModel.cardID.value // CHANGED this -- we can just access it
     val navController = rememberNavController()
+    // EXTRA: show the card modal automatically if cardID changes and is not empty
+    LaunchedEffect(cardID) {
+        if (cardID.isNotEmpty()) {
+            cardModal = true
+        }
+    }
 
     fun checkNfcStatus() {
         isNfcEnabled = nfcAdapter?.isEnabled ?: false
@@ -76,7 +82,7 @@ fun NFCReaderPage(viewModel: NFCViewModel = viewModel()) {
             AlertDialog(
                 onDismissRequest = { cardModal = false },
                 title = { Text("Card ID") },
-                text = { Text(cardID ?: "") },
+                text = { Text(text = cardID) },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -116,15 +122,14 @@ fun NFCReaderPage(viewModel: NFCViewModel = viewModel()) {
             )
         }
         Column(
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
-        )
-        {
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+        ) {
             Text(
-                "Waiting for NFC card...",
+                text = "Waiting for NFC card...",
                 fontSize = 12.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
             Icon(
@@ -132,9 +137,9 @@ fun NFCReaderPage(viewModel: NFCViewModel = viewModel()) {
                 contentDescription = "NFC Icon",
             )
             Text(
-                "Please tap your card on the back of this device to validate.",
+                text = "Please tap your card on the back of this device to validate.",
                 fontSize = 24.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.padding(20.dp)
             )
         }

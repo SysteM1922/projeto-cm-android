@@ -67,4 +67,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14")
 }
