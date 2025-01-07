@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
@@ -33,9 +34,7 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
 }
 
 @Composable
-fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifier) {
-
-    val context = LocalContext.current
+fun NavigationHost(navController: NavHostController, nfcViewModel: NFCViewModel, modifier: Modifier = Modifier) {
 
     NavHost(
         navController,
@@ -79,7 +78,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         }
 
         composable(BottomNavItem.NFCPage.route) {
-            NFCReaderPage(NFCViewModel())
+            NFCReaderPage(nfcViewModel)
         }
         composable(BottomNavItem.Profile.route) {
             ProfilePage(navController)
@@ -88,7 +87,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavHostController) {
+fun BottomNavigationBar(navController: NavHostController, nfcViewModel: NFCViewModel, modifier: Modifier = Modifier) {
     val items = listOf(
         BottomNavItem.Map,
         BottomNavItem.ScanQRCode,

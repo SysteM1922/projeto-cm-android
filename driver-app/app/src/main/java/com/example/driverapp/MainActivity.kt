@@ -1,5 +1,7 @@
 package com.example.driverapp
 
+import android.annotation.SuppressLint
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import android.nfc.FormatException
 import android.nfc.NdefMessage
 import android.nfc.NfcAdapter
@@ -35,6 +37,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     val sharedViewModel: NFCViewModel by viewModels()
     var nfcAdapter: NfcAdapter? = null
 
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -43,9 +46,10 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         enableEdgeToEdge()
         setContent {
             DriverAppTheme {
-                MainScreen()
+                MainScreen(nfcViewModel = sharedViewModel)
             }
         }
+        requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
     }
 
     override fun onResume() {
@@ -76,7 +80,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     }
 
     override fun onTagDiscovered(tag: Tag?) {
-        Log.d("ReadNFCActivity", sharedViewModel.isNFCPageVisible.toString())
+        Log.d("ReadNFCActivity", "Status: " + sharedViewModel.isNFCPageVisible.toString())
         if (!sharedViewModel.isNFCPageVisible) {
             return
         }
@@ -152,7 +156,7 @@ object NFCParser {
 
 
 @Composable
-fun MainScreen() {
+fun MainScreen(nfcViewModel: NFCViewModel) {
     val navController = rememberNavController()
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
@@ -183,11 +187,11 @@ fun MainScreen() {
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomBar) {
-                BottomNavigationBar(navController)
+                BottomNavigationBar(navController, nfcViewModel)
             }
         }
     ) { innerPadding ->
-        NavigationHost(navController, Modifier.padding(innerPadding))
+        NavigationHost(navController, nfcViewModel, Modifier.padding(innerPadding))
     }
 }
 

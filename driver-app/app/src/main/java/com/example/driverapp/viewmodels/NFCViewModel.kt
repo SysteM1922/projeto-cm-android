@@ -7,7 +7,5 @@ import androidx.lifecycle.ViewModel
 
 class NFCViewModel : ViewModel() {
     var isNFCPageVisible by mutableStateOf(false)
-
     var cardID = mutableStateOf("")
-    // var cardID: MutableState<String> = mutableStateOf("")
 }
