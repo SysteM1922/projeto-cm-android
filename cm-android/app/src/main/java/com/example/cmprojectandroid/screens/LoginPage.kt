@@ -10,8 +10,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.cmprojectandroid.repositories.UserRepository
 import com.google.firebase.auth.FirebaseAuth
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginPage(onNavigateToSignUp: () -> Unit, onLoginSuccess: () -> Unit) {
@@ -58,10 +61,26 @@ fun LoginPage(onNavigateToSignUp: () -> Unit, onLoginSuccess: () -> Unit) {
                     .addOnCompleteListener { task ->
                         isLoading = false
                         if (task.isSuccessful) {
-                            // Sign-in success
-                            onLoginSuccess()
+                            val user = auth.currentUser
+                            if (user != null) {
+                                // Upsert user in Firestore
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    try {
+                                        UserRepository.upsertUserInFirestore(user)
+                                        // Once done, call onLoginSuccess on main thread
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            onLoginSuccess()
+                                        }
+                                    } catch (e: Exception) {
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            errorMessage = e.message
+                                        }
+                                    }
+                                }
+                            } else {
+                                errorMessage = "User is null after login."
+                            }
                         } else {
-                            // Sign-in failed
                             errorMessage = task.exception?.message ?: "Login failed"
                         }
                     }
@@ -86,6 +105,14 @@ fun LoginPage(onNavigateToSignUp: () -> Unit, onLoginSuccess: () -> Unit) {
             modifier = Modifier.align(Alignment.End)
         ) {
             Text("Don't have an account? Sign Up")
+        }
+
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = errorMessage!!,
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }

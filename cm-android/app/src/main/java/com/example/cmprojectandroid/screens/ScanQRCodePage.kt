@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 
 @Composable
@@ -116,7 +117,7 @@ fun QRCodeScannerView(
             }
 
             val options = BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE)
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
                 .build()
 
             val barcodeScanner = BarcodeScanning.getClient(options)

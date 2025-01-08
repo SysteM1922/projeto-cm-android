@@ -63,18 +63,19 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.common.ktx)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.firebase.auth.ktx)
     implementation(libs.transportation.consumer)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
-    implementation("com.google.firebase:firebase-database")
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.database.ktx)
+    implementation(libs.google.firebase.firestore.ktx)
+    implementation(libs.google.firebase.auth.ktx)
+
     implementation("com.google.mlkit:barcode-scanning:17.2.0")
 
     // camera X
@@ -82,6 +83,9 @@ dependencies {
     implementation("androidx.camera:camera-camera2:${camerax_version}")
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
+
+    implementation("com.google.guava:guava:32.1.2-jre") // Replace with the latest version
+
 
     // Google Maps Compose library
     implementation("com.google.maps.android:maps-compose:6.2.1")
