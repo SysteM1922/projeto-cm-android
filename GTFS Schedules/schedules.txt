@@ -1,0 +1,63 @@
+EA,Estação de Aveiro,40.643771,-8.640994
+ADLPCTTB,Av. Dr. Lourenço Peixinho - CTT B,40.643384,-8.645103
+ADLPCTTA,Av. Dr. Lourenço Peixinho - CTT A,40.643258,-8.644679
+ADLPOB,Av. Dr. Lourenço Peixinho - Oita B,40.642904,-8.647506
+ADLPOA,Av. Dr. Lourenço Peixinho - Oita A,40.642761,-8.647195
+ADLPCB,Av. Dr. Lourenço Peixinho - Capitania B,40.642077,-8.651342
+ADLPCA,Av. Dr. Lourenço Peixinho - Capitania A,40.642004,-8.651315
+C10M,Caçadores 10 - Misericórdia,40.640787,-8.653032
+ASJB,Av. Santa Joana B,40.638377,-8.651841
+ASJA,Av. Santa Joana A,40.637799,-8.652152
+UARA,Universidade - Antiga Reitoria A,40.634962,-8.656958
+UARB,Universidade - Antiga Reitoria B,40.634892,-8.65684
+URA,Universidade - Reitoria A,40.632006,-8.657956
+URB,Universidade - Reitoria B,40.632157,-8.658047
+UPA,Universidade - Pavilhão A,40.630137,-8.655054
+UPB,Universidade - Pavilhão B,40.629865,-8.65477
+USA,Universidade - Santiago A,40.6298108,-8.6595775
+USB,Universidade - Santiago B,40.629946,-8.659104
+UC,Universidade Crasto,40.623036,-8.659233
+A5O,Av. 5 de Outubro,40.641837,-8.646785
+CDJI,Colégio D. José I,40.631644,-8.606549
+R8D,R. 8 de Dezembro,40.632202,-8.611068
+RBA,R. do Barreiro A,40.629822,-8.613726
+RBB,R. do Barreiro B,40.62993,-8.61381
+RSA,R. Solposto A,40.629918,-8.615121
+RSB,R. Solposto B,40.629738, -8.615175
+RSIA,R. Solposto / Igreja A,40.6324316,-8.6168472
+RSIB,R. Solposto / Igreja B,40.632458,-8.616975
+RV2A,R. do Viso 2 A,40.6373156,-8.6202027
+RV2B,R. do Viso 2 B,40.636952,-8.619987
+CA,Caião A,40.639558,-8.622084
+CB,Caião B,40.63992,-8.622476
+RV1A,R. do Viso 1 A,40.642598,-8.623232
+RV1B,R. do Viso 1 B,40.642651,-8.623407
+GCCA,Gen. Costa Cascais A,40.644454,-8.624686
+GCCB,Gen. Costa Cascais B,40.644121,-8.624632
+IEA,Igreja de Esgueira A,40.647947,-8.626877
+IEB,Igreja de Esgueira B,40.64769,-8.62681
+FE,Fonte de Esgueira,40.649906,-8.6271
+EC,Esgueira - Carramona,40.6484377,-8.6303897
+ELCB,Esgueira - Luciano de Castro B,40.6475284,-8.6328842
+ELCA,Esgueira - Luciano de Castro A,40.647377,-8.633135
+EJMA,Escola Jaime Magalhães A,40.646078,-8.632003
+EJMB,Escola Jaime Magalhães B,40.6460866,-8.632443
+VEA,Viaduto de Esgueira A,40.646628,-8.634245
+VEB,Viaduto de Esgueira B,40.646518,-8.63417
+RLGC,R. Luis G. Carvalho,40.644544,-8.642979
+HUA,Hospital / Universidade A,40.634734,-8.656197
+HUB,Hospital / Universidade B,40.634924,-8.6557312
+AUA,Av. da Universidade A,40.63152,-8.65485
+AUB,Av. da Universidade B,40.631627,-8.6547167
+ISCAUAA,ISCAUA A,40.6307003,-8.6533816
+ISCAUAB,ISCAUA B,40.6308693,-8.6532737
+RNSA,R. Nova de Santiago A,40.6292454,-8.6518843
+RNSB,R. Nova de Santiago B,40.6292581,-8.6516905
+ES,Escolas de Santiago,40.627033,-8.649217
+ROUS,R.de Ovar - Urbanização Santiago,40.627218,-8.648201
+MS,Mercado de Santiago,40.6270036,-8.6508603
+C10S,Caçadores 10 - Sé,40.639985,-8.651159
+F,Fórum,40.640445,-8.6518494
+RV,R. de Viseu,40.645256,-8.642372
+EP,Esgueira - Pelourinho,40.648244,-8.628369
+RM,R. Molareira,40.631689,-8.610454

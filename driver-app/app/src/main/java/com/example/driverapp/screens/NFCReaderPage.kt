@@ -1,6 +1,7 @@
 package com.example.driverapp.screens
 
 import android.nfc.NfcAdapter
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,18 +33,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun NFCReaderPage(
-    viewModel: NFCViewModel = viewModel()
-) {
+fun NFCReaderPage(nfcViewModel: NFCViewModel) {
     val context = LocalContext.current
     val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
     val lifecycleScope = rememberCoroutineScope()
     var isNfcEnabled by remember { mutableStateOf(false) }
     var showModal by remember { mutableStateOf(false) }
     var cardModal by remember { mutableStateOf(false) }
-    val cardID = viewModel.cardID.value // CHANGED this -- we can just access it
+    val cardID = nfcViewModel.cardID.value // CHANGED this -- we can just access it
+    var oldCardID = ""
     val navController = rememberNavController()
-    // EXTRA: show the card modal automatically if cardID changes and is not empty
+
     LaunchedEffect(cardID) {
         if (cardID.isNotEmpty()) {
             cardModal = true
@@ -56,16 +56,21 @@ fun NFCReaderPage(
 
     LaunchedEffect(Unit) {
 
-        viewModel.isNFCPageVisible = true
+        Log.d("ReadNFCActivity", "NFC Page Visible")
+        nfcViewModel.isNFCPageVisible = true
 
         lifecycleScope.launch {
             if (nfcAdapter != null) {
                 while (true) {
+                    delay(500)
                     checkNfcStatus()
                     if (!isNfcEnabled) {
                         showModal = true
+                    } else if (oldCardID != cardID) {
+                        oldCardID = cardID
+                        cardModal = true
                     }
-                    delay(500)
+                    Log.d("NFCReaderPage", "Card ID: $cardID")
                 }
             }
         }
@@ -73,7 +78,7 @@ fun NFCReaderPage(
 
     DisposableEffect(Unit) {
         onDispose {
-            viewModel.isNFCPageVisible = false
+            nfcViewModel.isNFCPageVisible = false
         }
     }
 
@@ -149,5 +154,5 @@ fun NFCReaderPage(
 @Preview(showBackground = true)
 @Composable
 fun NFCReaderPagePreview() {
-    NFCReaderPage(NFCViewModel())
+    NFCReaderPage(viewModel())
 }
