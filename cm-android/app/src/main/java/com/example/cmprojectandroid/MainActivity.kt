@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Build
@@ -32,6 +33,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
 
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,6 +43,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen()
             }
         }
+        requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
     }
 }
 
