@@ -59,8 +59,8 @@ class StopsViewModel : ViewModel() {
                 val favoritesList = document.get("favorites") as? List<Map<String, Any>> ?: listOf()
                 val favorites = favoritesList.map { map ->
                     Favorite(
-                        stop_id = map["stop_id"] as? String ?: "",
-                        stop_name = map["stop_name"] as? String ?: ""
+                        stop_id = map["id"] as? String ?: "",
+                        stop_name = map["name"] as? String ?: ""
                     )
                 }
                 _favorites.value = favorites
