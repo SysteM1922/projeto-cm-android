@@ -10,12 +10,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.cmprojectandroid.screens.*
+import com.example.cmprojectandroid.viewmodels.MapViewModel
 
 object NavRoutes {
     const val Login = "login"
@@ -33,9 +35,6 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
 
 @Composable
 fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifier) {
-
-    val context = LocalContext.current
-
     NavHost(
         navController,
         startDestination = NavRoutes.Login,
@@ -86,19 +85,23 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
                 }
             )
         ) { backStackEntry ->
+            // Retrieve the MapViewModel scoped to the NavBackStackEntry
+            val mapViewModel: MapViewModel = viewModel(
+                key = "map_view_model",
+                viewModelStoreOwner  = navController.getBackStackEntry("map?lat={lat}&lng={lng}&stopId={stopId}")
+            )
+
             val latString = backStackEntry.arguments?.getString("lat") ?: "40.643771"
             val lngString = backStackEntry.arguments?.getString("lng") ?: "-8.640994"
             val stopId = backStackEntry.arguments?.getString("stopId") ?: ""
 
-            val lat = latString.toDoubleOrNull() ?: 40.643771
-            val lng = lngString.toDoubleOrNull() ?: -8.640994
-
             // Pass them to MapPage:
             MapPage(
                 navController = navController,
-                latitude = lat,
-                longitude = lng,
-                selectedStopIdInitially = stopId
+                latitude = latString.toDoubleOrNull() ?: 40.643771,
+                longitude = lngString.toDoubleOrNull() ?: -8.640994,
+                selectedStopIdInitially = stopId,
+                mapViewModel = mapViewModel // Pass the ViewModel
             )
         }
 
@@ -111,7 +114,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         }
 
         composable(BottomNavItem.NFCPage.route) {
-            NFCPage(context)
+            NFCPage(LocalContext.current)
         }
 
         composable(BottomNavItem.Profile.route) {
@@ -159,17 +162,19 @@ fun BottomNavigationBar(navController: NavHostController) {
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.title) },
                 label = { Text(item.title) },
-                selected = currentRoute == item.route,
+                selected = currentRoute?.startsWith(item.route) == true,
                 onClick = {
-                    navController.navigate(item.route) {
-                        // Pop up to the start destination to avoid building up a large back stack
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                    if (currentRoute != item.route) {
+                        navController.navigate(item.route) {
+                            // Pop up to the start destination to avoid building up a large back stack
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            // Avoid multiple copies of the same destination
+                            launchSingleTop = true
+                            // Restore state when reselecting a previously selected item
+                            restoreState = true
                         }
-                        // Avoid multiple copies of the same destination
-                        launchSingleTop = true
-                        // Restore state when reselecting a previously selected item
-                        restoreState = true
                     }
                 }
             )

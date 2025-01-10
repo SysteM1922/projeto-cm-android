@@ -36,6 +36,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
+import com.example.cmprojectandroid.viewmodels.MapViewModel
+
 
 @Composable
 fun MapPage(
@@ -43,11 +45,20 @@ fun MapPage(
     latitude: Double = 40.643771,
     longitude: Double = -8.640994,
     selectedStopIdInitially: String = "",
-    stopsViewModel: StopsViewModel = viewModel()
+    stopsViewModel: StopsViewModel = viewModel(),
+    mapViewModel: MapViewModel = viewModel() // Add MapViewModel
 ) {
+    // Initialize the MapViewModel state
+    val initialCameraPosition = LatLng(latitude, longitude)
+    LaunchedEffect(Unit) {
+        if (mapViewModel.cameraPosition.value.target == initialCameraPosition) {
+            mapViewModel.updateCameraPosition(
+                CameraPosition.fromLatLngZoom(initialCameraPosition, 12f)
+            )
+        }
+    }
 
     val testDataViewModel: TestDataViewModel = viewModel()
-    val message by testDataViewModel.message.collectAsState()
 
     // List of stops and favorites
     val stops by stopsViewModel.stops
@@ -57,9 +68,9 @@ fun MapPage(
     var selectedStop by remember { mutableStateOf<Stop?>(null) }
     val selectedStopId = selectedStop?.stop_id
 
-    // UI states for searching and filtering
-    var searchQuery by remember { mutableStateOf("") }
-    var filterOption by remember { mutableStateOf("All") }  // "All" or "Favorites"
+    // UI states from ViewModel
+    val searchQuery by remember { mapViewModel::searchQuery }
+    val filterOption by remember { mapViewModel::filterOption }
 
     // Compute filtered list of stops
     val filteredStops = remember(stops, favorites, searchQuery, filterOption) {
@@ -76,9 +87,14 @@ fun MapPage(
         temp
     }
 
-    // Camera state for the map
+    // Camera state from ViewModel
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 12f)
+        position = mapViewModel.cameraPosition.value
+    }
+
+    // Update ViewModel when camera position changes
+    LaunchedEffect(cameraPositionState.position) {
+        mapViewModel.updateCameraPosition(cameraPositionState.position)
     }
 
     // Keyboard controller and focus manager for handling keyboard actions
@@ -87,6 +103,7 @@ fun MapPage(
 
     var isMapLoading by remember { mutableStateOf(true) }
 
+    // Initialize selected stop based on ViewModel's initial value
     LaunchedEffect(selectedStopIdInitially) {
         if (selectedStopIdInitially.isNotEmpty()) {
             val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
@@ -143,9 +160,8 @@ fun MapPage(
                 // Hide keyboard and clear search when map is clicked
                 focusManager.clearFocus()
                 keyboardController?.hide()
-                searchQuery = ""
+                mapViewModel.searchQuery = ""
             }
-            // TODO: ADD the same but when moving the map?
         ) {
             // For each stop in the filtered list
             filteredStops.forEach { stop ->
@@ -209,13 +225,13 @@ fun MapPage(
         ) {
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { searchQuery = it },
+                onValueChange = { mapViewModel.searchQuery = it },
                 label = { Text("Search stops by name") },
                 singleLine = true,
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = {
-                            searchQuery = ""
+                            mapViewModel.searchQuery = ""
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Clear,
@@ -241,7 +257,7 @@ fun MapPage(
             // b. Filter Row (All | Favorites)
             FilterRow(
                 filterOption = filterOption,
-                onFilterChange = { filterOption = it }
+                onFilterChange = { mapViewModel.filterOption = it }
             )
 
             // c. Search Results Dropdown
@@ -272,7 +288,7 @@ fun MapPage(
                                     )
                                 }
                                 // Clear search and hide keyboard
-                                searchQuery = ""
+                                mapViewModel.searchQuery = ""
                                 focusManager.clearFocus()
                                 keyboardController?.hide()
                             })
@@ -297,7 +313,7 @@ fun MapPage(
 
         // 4. Debug Text Overlay (Optional)
         Text(
-            text = "Real-time message: $message",
+            text = "Real-time message: ${testDataViewModel.message.collectAsState().value}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             modifier = Modifier
