@@ -5,16 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.example.cmprojectandroid.Model.Stop
 import com.example.cmprojectandroid.Model.Favorite
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -35,12 +30,12 @@ class StopsViewModel : ViewModel() {
     }
 
     private fun fetchStops() {
-        val database = FirebaseDatabase.getInstance().reference
-        database.child("stops").addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+        viewModelScope.launch {
+            try {
                 val stopsList = mutableListOf<Stop>()
-                for (child in snapshot.children) {
-                    val stop = child.getValue(Stop::class.java)
+                val querySnapshot = firestore.collection("stops").get().await()
+                for (document in querySnapshot.documents) {
+                    val stop = document.toObject(Stop::class.java)
                     if (stop != null) {
                         stopsList.add(stop)
                         Log.d("StopsViewModel", "Fetched stop: $stop")
@@ -48,12 +43,10 @@ class StopsViewModel : ViewModel() {
                 }
                 _stops.value = stopsList
                 Log.d("StopsViewModel", "Total stops fetched: ${stopsList.size}")
+            } catch (e: Exception) {
+                Log.e("StopsViewModel", "Error fetching stops", e)
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("StopsViewModel", "Error fetching stops", error.toException())
-            }
-        })
+        }
     }
 
     private fun fetchFavorites() {

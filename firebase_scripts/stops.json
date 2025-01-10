@@ -1,0 +1,122 @@
+{
+  "stop_id11_1": {
+    "id": "stop_id11_1",
+    "latitude": 40.643771,
+    "longitude": -8.640994,
+    "name": "Estação de Aveiro"
+  },
+  "stop_id11_10_a": {
+    "id": "stop_id11_10_a",
+    "latitude": 40.6298108,
+    "longitude": -8.6595775,
+    "name": "Universidade - Santiago A"
+  },
+  "stop_id11_10_b": {
+    "id": "stop_id11_10_b",
+    "latitude": 40.629946,
+    "longitude": -8.659104,
+    "name": "Universidade - Santiago B"
+  },
+  "stop_id11_11": {
+    "id": "stop_id11_11",
+    "latitude": 40.623036,
+    "longitude": -8.659233,
+    "name": "Universidade Crasto"
+  },
+  "stop_id11_12": {
+    "id": "stop_id11_12",
+    "latitude": 40.641837,
+    "longitude": -8.646785,
+    "name": "Av. 5 de Outubro"
+  },
+  "stop_id11_2_a": {
+    "id": "stop_id11_2_a",
+    "latitude": 40.643258,
+    "longitude": -8.644679,
+    "name": "Av. Dr. Lourenço Peixinho - CTT A"
+  },
+  "stop_id11_2_b": {
+    "id": "stop_id11_2_b",
+    "latitude": 40.643384,
+    "longitude": -8.645103,
+    "name": "Av. Dr. Lourenço Peixinho - CTT B"
+  },
+  "stop_id11_3_a": {
+    "id": "stop_id11_3_a",
+    "latitude": 40.642761,
+    "longitude": -8.647195,
+    "name": "Av. Dr. Lourenço Peixinho - Oita A"
+  },
+  "stop_id11_3_b": {
+    "id": "stop_id11_3_b",
+    "latitude": 40.642904,
+    "longitude": -8.647506,
+    "name": "Av. Dr. Lourenço Peixinho - Oita B"
+  },
+  "stop_id11_4_a": {
+    "id": "stop_id11_4_a",
+    "latitude": 40.642004,
+    "longitude": -8.651315,
+    "name": "Av. Dr. Lourenço Peixinho - Capitania A"
+  },
+  "stop_id11_4_b": {
+    "id": "stop_id11_4_b",
+    "latitude": 40.642077,
+    "longitude": -8.651342,
+    "name": "Av. Dr. Lourenço Peixinho - Capitania B"
+  },
+  "stop_id11_5": {
+    "id": "stop_id11_5",
+    "latitude": 40.640787,
+    "longitude": -8.653032,
+    "name": "Caçadores 10 - Misericórdia"
+  },
+  "stop_id11_6_a": {
+    "id": "stop_id11_6_a",
+    "latitude": 40.637799,
+    "longitude": -8.652152,
+    "name": "Av. Santa Joana A"
+  },
+  "stop_id11_6_b": {
+    "id": "stop_id11_6_b",
+    "latitude": 40.638377,
+    "longitude": -8.651841,
+    "name": "Av. Santa Joana B"
+  },
+  "stop_id11_7_a": {
+    "id": "stop_id11_7_a",
+    "latitude": 40.634962,
+    "longitude": -8.656958,
+    "name": "Universidade - Antiga Reitoria A"
+  },
+  "stop_id11_7_b": {
+    "id": "stop_id11_7_b",
+    "latitude": 40.634892,
+    "longitude": -8.65684,
+    "name": "Universidade - Antiga Reitoria B"
+  },
+  "stop_id11_8_a": {
+    "id": "stop_id11_8_a",
+    "latitude": 40.632006,
+    "longitude": -8.657956,
+    "name": "Universidade - Reitoria A"
+  },
+  "stop_id11_8_b": {
+    "id": "stop_id11_8_b",
+    "latitude": 40.632157,
+    "longitude": -8.658047,
+    "name": "Universidade - Reitoria B"
+  },
+  "stop_id11_9_a": {
+    "id": "stop_id11_9_a",
+    "latitude": 40.630137,
+    "longitude": -8.655054,
+    "name": "Universidade - Pavilhão A"
+  },
+  "stop_id11_9_b": {
+    "id": "stop_id11_9_b",
+    "latitude": 40.629865,
+    "longitude": -8.65477,
+    "name": "Universidade - Pavilhão B"
+  }
+}
