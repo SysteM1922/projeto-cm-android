@@ -1,5 +1,9 @@
 package com.example.cmprojectandroid.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,11 +22,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cmprojectandroid.Model.Stop
 import com.example.cmprojectandroid.viewmodels.StopsViewModel
@@ -45,6 +51,24 @@ fun MapPage(
     selectedStopIdInitially: String = "",
     stopsViewModel: StopsViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted ->
+            hasLocationPermission = granted
+            if (!granted) {
+                errorMessage = "Location permission is required to show your current location."
+            }
+        }
+    )
 
     val testDataViewModel: TestDataViewModel = viewModel()
     val message by testDataViewModel.message.collectAsState()
@@ -88,6 +112,9 @@ fun MapPage(
     var isMapLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(selectedStopIdInitially) {
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
         if (selectedStopIdInitially.isNotEmpty()) {
             val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
             if (foundStop != null) {
@@ -105,6 +132,7 @@ fun MapPage(
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
+            contentPadding = PaddingValues(top = 1000.dp, bottom = 100.dp),
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             onMapLoaded = {
@@ -129,7 +157,7 @@ fun MapPage(
             },
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
-                myLocationButtonEnabled = true,
+                myLocationButtonEnabled = false,
                 compassEnabled = true,
                 indoorLevelPickerEnabled = true,
                 scrollGesturesEnabled = true,
@@ -144,7 +172,10 @@ fun MapPage(
                 focusManager.clearFocus()
                 keyboardController?.hide()
                 searchQuery = ""
-            }
+            },
+            properties = MapProperties(
+                isMyLocationEnabled = hasLocationPermission,
+            ),
             // TODO: ADD the same but when moving the map?
         ) {
             // For each stop in the filtered list
@@ -177,7 +208,7 @@ fun MapPage(
                         }
                         // Return true to consume the click event and prevent default info window
                         true
-                    }
+                    },
                 )
             }
         }
