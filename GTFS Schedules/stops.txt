@@ -1,3 +1,4 @@
+stop_id,stop_name,stop_lat,stop_lon
 EA,Estação de Aveiro,40.643771,-8.640994
 ADLPCTTB,Av. Dr. Lourenço Peixinho - CTT B,40.643384,-8.645103
 ADLPCTTA,Av. Dr. Lourenço Peixinho - CTT A,40.643258,-8.644679
