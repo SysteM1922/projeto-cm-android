@@ -1,5 +1,9 @@
 package com.example.cmprojectandroid.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,11 +22,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cmprojectandroid.Model.Stop
 import com.example.cmprojectandroid.viewmodels.StopsViewModel
@@ -48,17 +54,27 @@ fun MapPage(
     stopsViewModel: StopsViewModel = viewModel(),
     mapViewModel: MapViewModel = viewModel() // Add MapViewModel
 ) {
-    // Initialize the MapViewModel state
-    val initialCameraPosition = LatLng(latitude, longitude)
-    LaunchedEffect(Unit) {
-        if (mapViewModel.cameraPosition.value.target == initialCameraPosition) {
-            mapViewModel.updateCameraPosition(
-                CameraPosition.fromLatLngZoom(initialCameraPosition, 12f)
-            )
-        }
+    val context = LocalContext.current
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
     }
 
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { granted ->
+            hasLocationPermission = granted
+            if (!granted) {
+                errorMessage = "Location permission is required to show your current location."
+            }
+        }
+    )
+
     val testDataViewModel: TestDataViewModel = viewModel()
+    val message by testDataViewModel.message.collectAsState()
 
     // List of stops and favorites
     val stops by stopsViewModel.stops
@@ -68,9 +84,9 @@ fun MapPage(
     var selectedStop by remember { mutableStateOf<Stop?>(null) }
     val selectedStopId = selectedStop?.stop_id
 
-    // UI states from ViewModel
-    val searchQuery by remember { mapViewModel::searchQuery }
-    val filterOption by remember { mapViewModel::filterOption }
+    // UI states for searching and filtering
+    var searchQuery by remember { mutableStateOf("") }
+    var filterOption by remember { mutableStateOf("All") }  // "All" or "Favorites"
 
     // Compute filtered list of stops
     val filteredStops = remember(stops, favorites, searchQuery, filterOption) {
@@ -105,6 +121,9 @@ fun MapPage(
 
     // Initialize selected stop based on ViewModel's initial value
     LaunchedEffect(selectedStopIdInitially) {
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
         if (selectedStopIdInitially.isNotEmpty()) {
             val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
             if (foundStop != null) {
@@ -122,6 +141,7 @@ fun MapPage(
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
+            contentPadding = PaddingValues(top = 1000.dp, bottom = 100.dp),
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             onMapLoaded = {
@@ -146,7 +166,7 @@ fun MapPage(
             },
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
-                myLocationButtonEnabled = true,
+                myLocationButtonEnabled = false,
                 compassEnabled = true,
                 indoorLevelPickerEnabled = true,
                 scrollGesturesEnabled = true,
@@ -161,7 +181,11 @@ fun MapPage(
                 focusManager.clearFocus()
                 keyboardController?.hide()
                 mapViewModel.searchQuery = ""
-            }
+            },
+            properties = MapProperties(
+                isMyLocationEnabled = hasLocationPermission,
+            ),
+            // TODO: ADD the same but when moving the map?
         ) {
             // For each stop in the filtered list
             filteredStops.forEach { stop ->
@@ -193,7 +217,7 @@ fun MapPage(
                         }
                         // Return true to consume the click event and prevent default info window
                         true
-                    }
+                    },
                 )
             }
         }
@@ -225,13 +249,13 @@ fun MapPage(
         ) {
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = { mapViewModel.searchQuery = it },
+                onValueChange = { searchQuery = it },
                 label = { Text("Search stops by name") },
                 singleLine = true,
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = {
-                            mapViewModel.searchQuery = ""
+                            searchQuery = ""
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Clear,
@@ -257,7 +281,7 @@ fun MapPage(
             // b. Filter Row (All | Favorites)
             FilterRow(
                 filterOption = filterOption,
-                onFilterChange = { mapViewModel.filterOption = it }
+                onFilterChange = { filterOption = it }
             )
 
             // c. Search Results Dropdown
@@ -288,7 +312,7 @@ fun MapPage(
                                     )
                                 }
                                 // Clear search and hide keyboard
-                                mapViewModel.searchQuery = ""
+                                searchQuery = ""
                                 focusManager.clearFocus()
                                 keyboardController?.hide()
                             })
@@ -313,7 +337,7 @@ fun MapPage(
 
         // 4. Debug Text Overlay (Optional)
         Text(
-            text = "Real-time message: ${testDataViewModel.message.collectAsState().value}",
+            text = "Real-time message: $message",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             modifier = Modifier
