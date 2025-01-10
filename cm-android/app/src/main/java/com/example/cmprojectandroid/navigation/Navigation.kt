@@ -1,37 +1,34 @@
 package com.example.cmprojectandroid.navigation
 
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.*
-import com.example.cmprojectandroid.R
-import com.example.cmprojectandroid.screens.HelloWorldPage
-import com.example.cmprojectandroid.screens.LoginPage
-import com.example.cmprojectandroid.screens.SignUpPage
-import com.example.cmprojectandroid.screens.MapPage
-import com.example.cmprojectandroid.screens.NFCPage
-import com.example.cmprojectandroid.screens.ProfilePage
-import com.example.cmprojectandroid.screens.ScanQRCodePage
+import androidx.navigation.navArgument
+import com.example.cmprojectandroid.screens.*
 
 object NavRoutes {
     const val Login = "login"
     const val SignUp = "sign_up"
+    const val StopPage = "stop_page/{stopName}"
+    const val MapPage = "map?lat={lat}&lng={lng}&stopId={stopId}"
 }
 
-
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    data object Map : BottomNavItem("map", "Map", Icons.Default.Star)
-    data object ScanQRCode : BottomNavItem("scan_qrcode", "Scan QR Code", Icons.Default.Star)
-    data object NFCPage : BottomNavItem("nfc_page", "NFC Page", Icons.Default.Star)
-    data object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
+    object Map : BottomNavItem("map", "Map", Icons.Default.Star)
+    object ScanQRCode : BottomNavItem("scan_qrcode", "Scan QR Code", Icons.Default.Star)
+    object NFCPage : BottomNavItem("nfc_page", "NFC Page", Icons.Default.Star)
+    object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
 }
 
 @Composable
@@ -72,9 +69,37 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
                 }
             )
         }
-        // Main app destinations
-        composable(BottomNavItem.Map.route) {
-            MapPage()
+        composable(
+            route = "map?lat={lat}&lng={lng}&stopId={stopId}",
+            arguments = listOf(
+                navArgument("lat") {
+                    type = NavType.StringType
+                    defaultValue = "40.643771"
+                },
+                navArgument("lng") {
+                    type = NavType.StringType
+                    defaultValue = "-8.640994"
+                },
+                navArgument("stopId") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
+            )
+        ) { backStackEntry ->
+            val latString = backStackEntry.arguments?.getString("lat") ?: "40.643771"
+            val lngString = backStackEntry.arguments?.getString("lng") ?: "-8.640994"
+            val stopId = backStackEntry.arguments?.getString("stopId") ?: ""
+
+            val lat = latString.toDoubleOrNull() ?: 40.643771
+            val lng = lngString.toDoubleOrNull() ?: -8.640994
+
+            // Pass them to MapPage:
+            MapPage(
+                navController = navController,
+                latitude = lat,
+                longitude = lng,
+                selectedStopIdInitially = stopId
+            )
         }
 
         composable(BottomNavItem.ScanQRCode.route) {
@@ -91,6 +116,30 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
 
         composable(BottomNavItem.Profile.route) {
             ProfilePage(navController)
+        }
+
+        // StopPage route with stopName as StringType
+        composable(
+            route = NavRoutes.StopPage,
+            arguments = listOf(navArgument("stopName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val stopName = backStackEntry.arguments?.getString("stopName")?.let { Uri.decode(it) } ?: "Unknown Stop"
+            StopPage(
+                stopName = stopName,
+                onBusDetailsClick = { bus ->
+                    // Navigate to Bus Details Page with busId
+                    navController.navigate("bus_details/${bus.busId}")
+                }
+            )
+        }
+
+        // BusDetailsPage route with navController passed
+        composable(
+            route = "bus_details/{busId}",
+            arguments = listOf(navArgument("busId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val busId = backStackEntry.arguments?.getString("busId") ?: "Unknown Bus"
+            BusDetailsPage(busId = busId, navController = navController)
         }
     }
 }

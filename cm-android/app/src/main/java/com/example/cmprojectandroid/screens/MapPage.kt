@@ -35,9 +35,16 @@ import com.google.maps.android.compose.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import androidx.navigation.NavHostController
 
 @Composable
-fun MapPage(stopsViewModel: StopsViewModel = viewModel()) {
+fun MapPage(
+    navController: NavHostController,
+    latitude: Double = 40.643771,
+    longitude: Double = -8.640994,
+    selectedStopIdInitially: String = "",
+    stopsViewModel: StopsViewModel = viewModel()
+) {
 
     val testDataViewModel: TestDataViewModel = viewModel()
     val message by testDataViewModel.message.collectAsState()
@@ -71,17 +78,55 @@ fun MapPage(stopsViewModel: StopsViewModel = viewModel()) {
 
     // Camera state for the map
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(40.643771, -8.640994), 12f)
+        position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 12f)
     }
 
     // Keyboard controller and focus manager for handling keyboard actions
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
+    var isMapLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(selectedStopIdInitially) {
+        if (selectedStopIdInitially.isNotEmpty()) {
+            val foundStop = stops.firstOrNull { it.id == selectedStopIdInitially }
+            if (foundStop != null) {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(foundStop.latitude, foundStop.longitude),
+                        15f
+                    ),
+                    400 // or whatever duration
+                )
+                selectedStop = foundStop
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
+            onMapLoaded = {
+                // The map is 100% ready
+                isMapLoading = false
+                // Perform camera update if we have a valid stop
+                if (selectedStopIdInitially.isNotEmpty()) {
+                    val foundStop = stops.firstOrNull { it.id == selectedStopIdInitially }
+                    if (foundStop != null) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(foundStop.latitude, foundStop.longitude),
+                                    15f
+                                ),
+                                600
+                            )
+                        }
+                        selectedStop = foundStop
+                    }
+                }
+            },
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
                 myLocationButtonEnabled = true,
@@ -134,6 +179,20 @@ fun MapPage(stopsViewModel: StopsViewModel = viewModel()) {
                         true
                     }
                 )
+            }
+        }
+
+        if (isMapLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        // Slightly dim the background
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
 
@@ -229,7 +288,7 @@ fun MapPage(stopsViewModel: StopsViewModel = viewModel()) {
                 stop = stop,
                 isFavorite = favorites.any { it.id == stop.id },
                 onDismiss = { selectedStop = null },
-                onDetailsClick = { /* Navigate to details screen if needed */ },
+                navController = navController,
                 onFavoriteClick = {
                     stopsViewModel.toggleFavorite(it)
                 }
