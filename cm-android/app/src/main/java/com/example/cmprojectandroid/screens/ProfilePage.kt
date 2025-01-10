@@ -132,11 +132,11 @@ fun FavoriteItemCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = favorite.name,
+                    text = favorite.stop_name,
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    text = "Stop ID: ${favorite.id}",
+                    text = "Stop ID: ${favorite.stop_id}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )

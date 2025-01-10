@@ -61,7 +61,7 @@ fun BusDetailsPage(
                 items(stops) { stop ->
                     StopItem(stop = stop, onStopClick = { selectedStop ->
                         navController.navigate(
-                            "map?lat=${selectedStop.latitude}&lng=${selectedStop.longitude}&stopId=${selectedStop.id}"
+                            "map?lat=${selectedStop.stop_lat}&lng=${selectedStop.stop_lon}&stopId=${selectedStop.stop_id}"
                         ) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
@@ -91,17 +91,17 @@ fun StopItem(stop: Stop, onStopClick: (Stop) -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stop.name,
+                    text = stop.stop_name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Latitude: ${stop.latitude}",
+                    text = "Latitude: ${stop.stop_lat}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "Longitude: ${stop.longitude}",
+                    text = "Longitude: ${stop.stop_lon}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

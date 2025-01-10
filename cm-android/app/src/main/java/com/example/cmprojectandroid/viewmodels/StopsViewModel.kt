@@ -59,8 +59,8 @@ class StopsViewModel : ViewModel() {
                 val favoritesList = document.get("favorites") as? List<Map<String, Any>> ?: listOf()
                 val favorites = favoritesList.map { map ->
                     Favorite(
-                        id = map["id"] as? String ?: "",
-                        name = map["name"] as? String ?: ""
+                        stop_id = map["stop_id"] as? String ?: "",
+                        stop_name = map["stop_name"] as? String ?: ""
                     )
                 }
                 _favorites.value = favorites
@@ -86,35 +86,35 @@ class StopsViewModel : ViewModel() {
                 val favoritesList = document.get("favorites") as? List<Map<String, Any>> ?: listOf()
                 val currentFavorites = favoritesList.map { map ->
                     Favorite(
-                        id = map["id"] as? String ?: "",
-                        name = map["name"] as? String ?: ""
+                        stop_id = map["stop_id"] as? String ?: "",
+                        stop_name = map["stop_name"] as? String ?: ""
                     )
                 }.toMutableList()
 
-                val existingFavorite = currentFavorites.find { it.id == stop.id }
+                val existingFavorite = currentFavorites.find { it.stop_id == stop.stop_id }
 
                 if (existingFavorite != null) {
                     // Remove from favorites
                     currentFavorites.remove(existingFavorite)
                     userRef.set(
-                        mapOf("favorites" to currentFavorites.map { mapOf("id" to it.id, "name" to it.name) }),
+                        mapOf("favorites" to currentFavorites.map { mapOf("id" to it.stop_id, "name" to it.stop_name) }),
                         SetOptions.merge()
                     )
                         .addOnSuccessListener {
-                            _favorites.value = _favorites.value.filter { it.id != stop.id }
-                            Log.d("StopsViewModel", "Stop removed from favorites: ${stop.id}")
+                            _favorites.value = _favorites.value.filter { it.stop_id != stop.stop_id }
+                            Log.d("StopsViewModel", "Stop removed from favorites: ${stop.stop_id}")
                         }
                 } else {
                     // Add to favorites
-                    val newFavorite = Favorite(id = stop.id, name = stop.name)
+                    val newFavorite = Favorite(stop_id = stop.stop_id, stop_name = stop.stop_name)
                     currentFavorites.add(newFavorite)
                     userRef.set(
-                        mapOf("favorites" to currentFavorites.map { mapOf("id" to it.id, "name" to it.name) }),
+                        mapOf("favorites" to currentFavorites.map { mapOf("id" to it.stop_id, "name" to it.stop_name) }),
                         SetOptions.merge()
                     )
                         .addOnSuccessListener {
                             _favorites.value += newFavorite
-                            Log.d("StopsViewModel", "Stop added to favorites: ${stop.id}")
+                            Log.d("StopsViewModel", "Stop added to favorites: ${stop.stop_id}")
                         }
                 }
             } catch (e: Exception) {
@@ -124,6 +124,6 @@ class StopsViewModel : ViewModel() {
     }
 
     fun isStopFavorite(stopId: String): Boolean {
-        return _favorites.value.any { it.id == stopId }
+        return _favorites.value.any { it.stop_id == stopId }
     }
 }

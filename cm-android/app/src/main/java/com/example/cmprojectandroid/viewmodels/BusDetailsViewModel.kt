@@ -20,34 +20,34 @@ class BusDetailsViewModel : ViewModel() {
     private fun loadMockStops() {
         val mockStops = listOf(
             Stop(
-                id = "stop_id11_1",
-                name = "Estação de Aveiro",
-                latitude = 40.643771,
-                longitude = -8.640994
+                stop_id = "stop_id11_1",
+                stop_name = "Estação de Aveiro",
+                stop_lat = 40.643771,
+                stop_lon = -8.640994
             ),
             Stop(
-                id = "stop_id11_10_a",
-                name = "Universidade - Santiago A",
-                latitude = 40.6298108,
-                longitude = -8.6595775
+                stop_id = "stop_id11_10_a",
+                stop_name = "Universidade - Santiago A",
+                stop_lat = 40.6298108,
+                stop_lon = -8.6595775
             ),
             Stop(
-                id = "stop_id11_10_b",
-                name = "Universidade - Santiago B",
-                latitude = 40.629946,
-                longitude = -8.659104
+                stop_id = "stop_id11_10_b",
+                stop_name = "Universidade - Santiago B",
+                stop_lat = 40.629946,
+                stop_lon = -8.659104
             ),
             Stop(
-                id = "stop_id11_11",
-                name = "Universidade Crasto",
-                latitude = 40.623036,
-                longitude = -8.659233
+                stop_id = "stop_id11_11",
+                stop_name = "Universidade Crasto",
+                stop_lat = 40.623036,
+                stop_lon = -8.659233
             ),
             Stop(
-                id = "stop_id11_12",
-                name = "Av. 5 de Outubro",
-                latitude = 40.641837,
-                longitude = -8.646785
+                stop_id = "stop_id11_12",
+                stop_name = "Av. 5 de Outubro",
+                stop_lat = 40.641837,
+                stop_lon = -8.646785
             )
         )
         _stops.value = mockStops

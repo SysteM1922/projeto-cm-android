@@ -55,7 +55,7 @@ fun BottomModal(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stop.name,
+                        text = stop.stop_name,
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -92,7 +92,7 @@ fun BottomModal(
                     Button(
                         onClick = {
                             // Navigate to StopPage with the stop name
-                            val encodedStopName = Uri.encode(stop.name)
+                            val encodedStopName = Uri.encode(stop.stop_name)
                             navController.navigate("stop_page/$encodedStopName") {
                                 // Optional: Pop up to the start destination if needed
                                 popUpTo(navController.graph.findStartDestination().id) {

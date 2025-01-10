@@ -24,8 +24,8 @@ class UserProfileViewModel : ViewModel() {
                 val favoritesList = document.get("favorites") as? List<Map<String, Any>> ?: listOf()
                 val favorites = favoritesList.map { map ->
                     Favorite(
-                        id = map["id"] as? String ?: "",
-                        name = map["name"] as? String ?: ""
+                        stop_id = map["stop_id"] as? String ?: "",
+                        stop_name = map["stop_name"] as? String ?: ""
                     )
                 }
                 _favorites.value = favorites
@@ -44,13 +44,13 @@ class UserProfileViewModel : ViewModel() {
 
                 // Remove the favorite from the local list
                 val updatedFavorites = _favorites.value.toMutableList().apply {
-                    removeAll { it.id == favorite.id }
+                    removeAll { it.stop_id == favorite.stop_id }
                 }
                 _favorites.value = updatedFavorites
 
                 // Update Firestore
                 userRef.set(
-                    mapOf("favorites" to updatedFavorites.map { mapOf("id" to it.id, "name" to it.name) }),
+                    mapOf("favorites" to updatedFavorites.map { mapOf("stop_id" to it.stop_id, "stop_name" to it.stop_name) }),
                     com.google.firebase.firestore.SetOptions.merge()
                 ).await()
             } catch (e: Exception) {

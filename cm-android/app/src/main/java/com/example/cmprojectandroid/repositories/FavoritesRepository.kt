@@ -28,13 +28,13 @@ class FavoritesRepository {
             val document = userRef.get().await()
             val favorites = document.get("favorites") as? List<String> ?: listOf()
 
-            if (favorites.contains(stop.id)) {
+            if (favorites.contains(stop.stop_id)) {
                 // Remove from favorites
-                userRef.update("favorites", FieldValue.arrayRemove(stop.id)).await()
+                userRef.update("favorites", FieldValue.arrayRemove(stop.stop_id)).await()
                 Result.success(false) // false indicates removed from favorites
             } else {
                 // Add to favorites
-                userRef.update("favorites", FieldValue.arrayUnion(stop.id)).await()
+                userRef.update("favorites", FieldValue.arrayUnion(stop.stop_id)).await()
                 Result.success(true) // true indicates added to favorites
             }
         } catch (e: Exception) {
@@ -71,9 +71,9 @@ class StopsViewModel : ViewModel() {
                     // Update the local state
                     _favoriteStops.update { currentFavorites ->
                         if (isFavorite) {
-                            currentFavorites + stop.id
+                            currentFavorites + stop.stop_id
                         } else {
-                            currentFavorites - stop.id
+                            currentFavorites - stop.stop_id
                         }
                     }
                 }

@@ -1,6 +1,6 @@
 package com.example.cmprojectandroid.Model
 
 data class Favorite(
-    val id: String = "",
-    val name: String = ""
+    val stop_id: String = "",
+    val stop_name: String = ""
 )

@@ -55,7 +55,7 @@ fun MapPage(
 
     // Track the selected stop for modal
     var selectedStop by remember { mutableStateOf<Stop?>(null) }
-    val selectedStopId = selectedStop?.id
+    val selectedStopId = selectedStop?.stop_id
 
     // UI states for searching and filtering
     var searchQuery by remember { mutableStateOf("") }
@@ -65,12 +65,12 @@ fun MapPage(
     val filteredStops = remember(stops, favorites, searchQuery, filterOption) {
         // 1) Search filter
         var temp = stops.filter { stop ->
-            stop.name.contains(searchQuery, ignoreCase = true)
+            stop.stop_name.contains(searchQuery, ignoreCase = true)
         }
         // 2) Favorites filter
         if (filterOption == "Favorites") {
             temp = temp.filter { stop ->
-                favorites.any { fav -> fav.id == stop.id }
+                favorites.any { fav -> fav.stop_id == stop.stop_id }
             }
         }
         temp
@@ -89,11 +89,11 @@ fun MapPage(
 
     LaunchedEffect(selectedStopIdInitially) {
         if (selectedStopIdInitially.isNotEmpty()) {
-            val foundStop = stops.firstOrNull { it.id == selectedStopIdInitially }
+            val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
             if (foundStop != null) {
                 cameraPositionState.animate(
                     CameraUpdateFactory.newLatLngZoom(
-                        LatLng(foundStop.latitude, foundStop.longitude),
+                        LatLng(foundStop.stop_lat, foundStop.stop_lon),
                         15f
                     ),
                     400 // or whatever duration
@@ -112,12 +112,12 @@ fun MapPage(
                 isMapLoading = false
                 // Perform camera update if we have a valid stop
                 if (selectedStopIdInitially.isNotEmpty()) {
-                    val foundStop = stops.firstOrNull { it.id == selectedStopIdInitially }
+                    val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
                     if (foundStop != null) {
                         CoroutineScope(Dispatchers.Main).launch {
                             cameraPositionState.animate(
                                 CameraUpdateFactory.newLatLngZoom(
-                                    LatLng(foundStop.latitude, foundStop.longitude),
+                                    LatLng(foundStop.stop_lat, foundStop.stop_lon),
                                     15f
                                 ),
                                 600
@@ -149,14 +149,14 @@ fun MapPage(
         ) {
             // For each stop in the filtered list
             filteredStops.forEach { stop ->
-                val isFavorite = favorites.any { it.id == stop.id }
-                val isSelected = (stop.id == selectedStopId)
+                val isFavorite = favorites.any { it.stop_id == stop.stop_id }
+                val isSelected = (stop.stop_id == selectedStopId)
                 Marker(
                     state = MarkerState(
-                        position = LatLng(stop.latitude, stop.longitude)
+                        position = LatLng(stop.stop_lat, stop.stop_lon)
                     ),
-                    title = stop.name,
-                    snippet = "Stop ID: ${stop.id}",
+                    title = stop.stop_name,
+                    snippet = "Stop ID: ${stop.stop_id}",
                     icon = BitmapDescriptorFactory.defaultMarker(
                         when {
                             isSelected -> BitmapDescriptorFactory.HUE_GREEN
@@ -169,7 +169,7 @@ fun MapPage(
                         CoroutineScope(Dispatchers.Main).launch {
                             cameraPositionState.animate(
                                 CameraUpdateFactory.newLatLngZoom(
-                                    LatLng(stop.latitude, stop.longitude),
+                                    LatLng(stop.stop_lat, stop.stop_lon),
                                     15f // Adjust zoom as needed
                                 ),
                                 400 // Duration of camera animation in ms
@@ -265,7 +265,7 @@ fun MapPage(
                                 CoroutineScope(Dispatchers.Main).launch {
                                     cameraPositionState.animate(
                                         CameraUpdateFactory.newLatLngZoom(
-                                            LatLng(it.latitude, it.longitude),
+                                            LatLng(it.stop_lat, it.stop_lon),
                                             15f // Adjust zoom as needed
                                         ),
                                         400 // Duration of camera animation in ms
@@ -286,7 +286,7 @@ fun MapPage(
         selectedStop?.let { stop ->
             BottomModal(
                 stop = stop,
-                isFavorite = favorites.any { it.id == stop.id },
+                isFavorite = favorites.any { it.stop_id == stop.stop_id },
                 onDismiss = { selectedStop = null },
                 navController = navController,
                 onFavoriteClick = {
@@ -387,7 +387,7 @@ fun SearchResultItem(
         ) {
             // Stop Name
             Text(
-                text = stop.name,
+                text = stop.stop_name,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f)
             )
@@ -395,7 +395,7 @@ fun SearchResultItem(
             // Forward Arrow Icon to indicate navigable action
             Icon(
                 imageVector = Icons.Default.KeyboardArrowRight,
-                contentDescription = "Navigate to ${stop.name}",
+                contentDescription = "Navigate to ${stop.stop_name}",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
