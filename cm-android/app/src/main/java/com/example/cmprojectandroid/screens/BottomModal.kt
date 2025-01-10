@@ -6,19 +6,22 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.cmprojectandroid.Model.Stop
+import android.net.Uri
+import androidx.navigation.NavGraph.Companion.findStartDestination
 
 @Composable
 fun BottomModal(
     stop: Stop,
     isFavorite: Boolean, // Receive favorite status as a parameter
     onDismiss: () -> Unit,
-    onDetailsClick: () -> Unit = {},
+    navController: NavHostController,
     onFavoriteClick: (Stop) -> Unit = {}
 ) {
     Box(
@@ -87,7 +90,21 @@ fun BottomModal(
                     }
 
                     Button(
-                        onClick = onDetailsClick,
+                        onClick = {
+                            // Navigate to StopPage with the stop name
+                            val encodedStopName = Uri.encode(stop.name)
+                            navController.navigate("stop_page/$encodedStopName") {
+                                // Optional: Pop up to the start destination if needed
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                // Avoid multiple copies of the same destination
+                                launchSingleTop = true
+                                // Restore state when reselecting a previously selected item
+                                restoreState = true
+                            }
+                            onDismiss() // Optionally dismiss the modal
+                        },
                         modifier = Modifier.weight(1f)
                     ) {
                         Row(

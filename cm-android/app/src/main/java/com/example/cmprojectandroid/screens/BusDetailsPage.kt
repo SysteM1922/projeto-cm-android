@@ -1,6 +1,5 @@
 package com.example.cmprojectandroid.screens
 
-// THIS IS THE PAGE FOR EACH BUS, COMING FROM THE STOP PAGE
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,36 +13,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.cmprojectandroid.Model.Bus
-import com.example.cmprojectandroid.viewmodels.StopViewModel
-
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import com.example.cmprojectandroid.Model.Stop
+import com.example.cmprojectandroid.viewmodels.BusDetailsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StopPage(
-    stopName: String,
-    onBusDetailsClick: (Bus) -> Unit,
-    viewModel: StopViewModel = viewModel()
+fun BusDetailsPage(
+    busId: String,
+    navController: NavHostController,
+    viewModel: BusDetailsViewModel = viewModel()
 ) {
-    // Observe the list of buses from the ViewModel
-    val buses by viewModel.buses.collectAsState()
+    // Fetch stops for the given busId (mocked)
+    LaunchedEffect(busId) {
+        viewModel.fetchStopsForBus(busId)
+    }
+
+    // Observe the list of stops from the ViewModel
+    val stops by viewModel.stops.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = stopName) }
+                title = { Text(text = "Bus Details") }
             )
         }
     ) { paddingValues ->
-        if (buses.isEmpty()) {
-            // Display a message when no buses are available
+        if (stops.isEmpty()) {
+            // Display a message when no stops are available
             Box(
                 modifier = Modifier
                     .padding(paddingValues)
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "No buses available at this time.")
+                Text(text = "No upcoming stops available.")
             }
         } else {
             LazyColumn(
@@ -53,8 +58,18 @@ fun StopPage(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(buses) { bus ->
-                    BusItem(bus = bus, onBusDetailsClick = onBusDetailsClick)
+                items(stops) { stop ->
+                    StopItem(stop = stop, onStopClick = { selectedStop ->
+                        navController.navigate(
+                            "map?lat=${selectedStop.latitude}&lng=${selectedStop.longitude}&stopId=${selectedStop.id}"
+                        ) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    })
                 }
             }
         }
@@ -62,11 +77,11 @@ fun StopPage(
 }
 
 @Composable
-fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit) {
+fun StopItem(stop: Stop, onStopClick: (Stop) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onBusDetailsClick(bus) },
+            .clickable { onStopClick(stop) },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -76,22 +91,26 @@ fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit) {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = bus.busName,
+                    text = stop.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Arrival: ${bus.arrivalTime}",
+                    text = "Latitude: ${stop.latitude}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Longitude: ${stop.longitude}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
             IconButton(
-                onClick = { onBusDetailsClick(bus) }
+                onClick = { onStopClick(stop) }
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowRight,
-                    contentDescription = "Bus Details"
+                    contentDescription = "View on Map"
                 )
             }
         }
