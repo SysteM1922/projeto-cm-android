@@ -1,9 +1,5 @@
 package com.example.cmprojectandroid.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,13 +18,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.cmprojectandroid.Model.Stop
 import com.example.cmprojectandroid.viewmodels.StopsViewModel
@@ -42,8 +36,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
-import com.example.cmprojectandroid.viewmodels.MapViewModel
-
 
 @Composable
 fun MapPage(
@@ -51,27 +43,8 @@ fun MapPage(
     latitude: Double = 40.643771,
     longitude: Double = -8.640994,
     selectedStopIdInitially: String = "",
-    stopsViewModel: StopsViewModel = viewModel(),
-    mapViewModel: MapViewModel = viewModel() // Add MapViewModel
+    stopsViewModel: StopsViewModel = viewModel()
 ) {
-    val context = LocalContext.current
-    var hasLocationPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { granted ->
-            hasLocationPermission = granted
-            if (!granted) {
-                errorMessage = "Location permission is required to show your current location."
-            }
-        }
-    )
 
     val testDataViewModel: TestDataViewModel = viewModel()
     val message by testDataViewModel.message.collectAsState()
@@ -103,14 +76,9 @@ fun MapPage(
         temp
     }
 
-    // Camera state from ViewModel
+    // Camera state for the map
     val cameraPositionState = rememberCameraPositionState {
-        position = mapViewModel.cameraPosition.value
-    }
-
-    // Update ViewModel when camera position changes
-    LaunchedEffect(cameraPositionState.position) {
-        mapViewModel.updateCameraPosition(cameraPositionState.position)
+        position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 12f)
     }
 
     // Keyboard controller and focus manager for handling keyboard actions
@@ -119,29 +87,28 @@ fun MapPage(
 
     var isMapLoading by remember { mutableStateOf(true) }
 
-    // Initialize selected stop based on ViewModel's initial value
     LaunchedEffect(selectedStopIdInitially) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
+        println("LaunchedEffect triggered => stopId=$selectedStopIdInitially")
         if (selectedStopIdInitially.isNotEmpty()) {
             val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
+            println("FoundStop => $foundStop")
             if (foundStop != null) {
+                println("Animating camera to: ${foundStop.stop_lat}, ${foundStop.stop_lon}")
                 cameraPositionState.animate(
                     CameraUpdateFactory.newLatLngZoom(
                         LatLng(foundStop.stop_lat, foundStop.stop_lon),
                         15f
                     ),
-                    400 // or whatever duration
+                    700
                 )
                 selectedStop = foundStop
             }
         }
     }
 
+
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
-            contentPadding = PaddingValues(top = 1000.dp, bottom = 100.dp),
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             onMapLoaded = {
@@ -166,7 +133,7 @@ fun MapPage(
             },
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
-                myLocationButtonEnabled = false,
+                myLocationButtonEnabled = true,
                 compassEnabled = true,
                 indoorLevelPickerEnabled = true,
                 scrollGesturesEnabled = true,
@@ -180,11 +147,8 @@ fun MapPage(
                 // Hide keyboard and clear search when map is clicked
                 focusManager.clearFocus()
                 keyboardController?.hide()
-                mapViewModel.searchQuery = ""
-            },
-            properties = MapProperties(
-                isMyLocationEnabled = hasLocationPermission,
-            ),
+                searchQuery = ""
+            }
             // TODO: ADD the same but when moving the map?
         ) {
             // For each stop in the filtered list
@@ -217,7 +181,7 @@ fun MapPage(
                         }
                         // Return true to consume the click event and prevent default info window
                         true
-                    },
+                    }
                 )
             }
         }
@@ -336,14 +300,24 @@ fun MapPage(
         }
 
         // 4. Debug Text Overlay (Optional)
-        Text(
-            text = "Real-time message: $message",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+        Column(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(8.dp)
-        )
+        ) {
+            // Existing line
+            Text(
+                text = "Real-time message: $message",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            // NEW line to show lat, lng, and stopId
+            Text(
+                text = "Debug => lat=$latitude, lng=$longitude, stopId='$selectedStopIdInitially'",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
     }
 }
 

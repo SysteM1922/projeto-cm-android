@@ -71,9 +71,8 @@ fun MainScreen() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val showBottomBar = when {
-        currentRoute?.startsWith(NavRoutes.Login) == true -> false
-        currentRoute?.startsWith(NavRoutes.SignUp) == true -> false
+    val showBottomBar = when (currentRoute) {
+        NavRoutes.Login, NavRoutes.SignUp -> false
         else -> true
     }
 
@@ -88,5 +87,4 @@ fun MainScreen() {
         NavigationHost(navController, Modifier.padding(innerPadding))
     }
 }
-
 
