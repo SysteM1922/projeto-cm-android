@@ -1,10 +1,10 @@
-route_id,service_id,trip_id,trip_headsign
-L11,AW,L11AW1,
-L11,AW,L11AW2,
-L11,AW,L11AW3,
-L5,AW,L5AW1,Santiago
-L5,AW,L5AW2,Solposto
-L5,AW,L5AW3,Santiago
-L5,AW,L5AW4,Solposto
-L5,AW,L5AW5,Santiago
-L5,AW,L5AW6,Solposto
+route_id,service_id,trip_id,trip_headsign,trip_short_name
+L11,AW,L11AW1,,Linha 11
+L11,AW,L11AW2,,Linha 11
+L11,AW,L11AW3,,Linha 11
+L5,AW,L5AW1,Santiago,Linha 5 (Santiago)
+L5,AW,L5AW2,Solposto,Linha 5 (Solposto)
+L5,AW,L5AW3,Santiago,Linha 5 (Santiago)
+L5,AW,L5AW4,Solposto,Linha 5 (Solposto)
+L5,AW,L5AW5,Santiago,Linha 5 (Santiago)
+L5,AW,L5AW6,Solposto,Linha 5 (Solposto)

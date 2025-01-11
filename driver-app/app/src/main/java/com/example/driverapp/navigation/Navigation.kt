@@ -37,9 +37,6 @@ fun NavigationHost(navController: NavHostController, nfcViewModel: NFCViewModel,
         // Authentication routes
         composable(NavRoutes.Login) {
             LoginPage(
-                onNavigateToSignUp = {
-                    navController.navigate(NavRoutes.Login)
-                },
                 onLoginSuccess = {
                     // Navigate to main app (Map page)
                     navController.navigate(NavRoutes.DriverPage) {
@@ -51,7 +48,13 @@ fun NavigationHost(navController: NavHostController, nfcViewModel: NFCViewModel,
         }
         // Main app destinations
         composable(NavRoutes.DriverPage) {
-            DriverPage()
+            DriverPage(
+                onLogout = {
+                    navController.navigate(NavRoutes.Login) {
+                        popUpTo(0)
+                    }
+                }
+            )
         }
         composable(NavRoutes.NFCPage) {
             NFCReaderPage(nfcViewModel)

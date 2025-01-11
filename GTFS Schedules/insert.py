@@ -7,21 +7,21 @@ firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-with open('stops.txt', 'r', encoding='utf-8') as f:
-    # stop_id,stop_name,stop_lat,stop_lon
-    # EA,Estação de Aveiro,40.643771,-8.640994
+with open('trips.txt', 'r', encoding='utf-8') as f:
+    # route_id,service_id,trip_id,trip_headsign
+    # L11,AW,L11AW1,
     f.readline()  # Skip the first line
     data = []
     for line in f:
-        stop_id, stop_name, stop_lat, stop_lon = line.strip().split(',')
+        line = line.strip().split(',')
         data.append({
-            'stop_id': stop_id,
-            'stop_name': stop_name,
-            'stop_lat': float(stop_lat),
-            'stop_lon': float(stop_lon)
+            "route_id": line[0],
+            "service_id": line[1],
+            "trip_id": line[2],
+            "trip_headsign": line[3]
         })
 
 for stop_data in data:
-    db.collection('stops').document(stop_data['stop_id']).set(stop_data)
+    db.collection('trips').document(stop_data['trip_id']).set(stop_data)
 
 print("Stops data imported successfully!")
