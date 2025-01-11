@@ -200,14 +200,14 @@ fun MapPage(
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
                 myLocationButtonEnabled = false,
-                compassEnabled = true,
-                indoorLevelPickerEnabled = true,
-                scrollGesturesEnabled = true,
-                zoomGesturesEnabled = true,
-                tiltGesturesEnabled = true,
-                rotationGesturesEnabled = true,
-                scrollGesturesEnabledDuringRotateOrZoom = true,
-                mapToolbarEnabled = true
+                compassEnabled = isMapLoaded,
+                indoorLevelPickerEnabled = isMapLoaded,
+                scrollGesturesEnabled = isMapLoaded,
+                zoomGesturesEnabled = isMapLoaded,
+                tiltGesturesEnabled = isMapLoaded,
+                rotationGesturesEnabled = isMapLoaded,
+                scrollGesturesEnabledDuringRotateOrZoom = isMapLoaded,
+                mapToolbarEnabled = isMapLoaded
             ),
             onMapClick = { latLng ->
                 // Hide keyboard and clear search when map is clicked
