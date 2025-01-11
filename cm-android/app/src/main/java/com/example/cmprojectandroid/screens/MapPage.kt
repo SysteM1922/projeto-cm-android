@@ -67,6 +67,9 @@ fun MapPage(
         """.trimIndent())
     }
 
+    var lat2 by remember { mutableStateOf(latitude) }
+    var lng2 by remember { mutableStateOf(longitude) }
+
     val context = LocalContext.current
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -100,16 +103,15 @@ fun MapPage(
 
     // UI states for searching and filtering
     var searchQuery by remember { mutableStateOf("") }
-    var filterOption by remember { mutableStateOf("All") }  // "All" or "Favorites"
+
+    val isFavoritesSelected by mapViewModel.isFavoritesSelected
 
     // Compute filtered list of stops
-    val filteredStops = remember(stops, favorites, searchQuery, filterOption) {
-        // 1) Search filter
+    val filteredStops = remember(stops, favorites, searchQuery, isFavoritesSelected) {
         var temp = stops.filter { stop ->
             stop.stop_name.contains(searchQuery, ignoreCase = true)
         }
-        // 2) Favorites filter
-        if (filterOption == "Favorites") {
+        if (isFavoritesSelected) {
             temp = temp.filter { stop ->
                 favorites.any { fav -> fav.stop_id == stop.stop_id }
             }
@@ -121,8 +123,6 @@ fun MapPage(
     val cameraPositionState = rememberCameraPositionState {
         position = mapViewModel.cameraPosition.value
     }
-
-    var currentCameraPosition by remember { mutableStateOf(cameraPositionState.position) }
 
     // Update ViewModel when camera position changes
     LaunchedEffect(cameraPositionState.position) {
@@ -151,6 +151,25 @@ fun MapPage(
                 )
                 selectedStop = foundStop
             }
+        }
+    }
+
+    // correct bug when the redirected to a stop and it is not a favorite and "Favorites" filter is active
+    LaunchedEffect(lat2, lng2, isFavoritesSelected) {
+        if (lat2 != null && lng2 != null) {
+            // Find the stop corresponding to the given latitude and longitude
+            val foundStop = stops.firstOrNull {
+                it.stop_lat == lat2 && it.stop_lon == lng2
+            }
+
+            // If the stop is not a favorite and "Favorites" filter is active, toggle it off
+            if (isFavoritesSelected && (foundStop == null || !favorites.any { it.stop_id == foundStop.stop_id })) {
+                mapViewModel.setFavoritesFilter(false)
+            }
+
+            // reset lat2 and lng2
+            lat2 = null
+            lng2 = null
         }
     }
 
@@ -291,8 +310,10 @@ fun MapPage(
 
             // b. Filter Row (All | Favorites)
             FilterRow(
-                filterOption = filterOption,
-                onFilterChange = { filterOption = it }
+                isFavoritesSelected = isFavoritesSelected,
+                onFilterChange = { selected ->
+                    mapViewModel.setFavoritesFilter(selected)
+                }
             )
 
             // c. Search Results Dropdown
@@ -323,7 +344,7 @@ fun MapPage(
                                     )
                                 }
                                 // Clear search and hide keyboard
-                                searchQuery = ""
+                                // searchQuery = ""
                                 focusManager.clearFocus()
                                 keyboardController?.hide()
                             })
@@ -376,8 +397,8 @@ fun MapPage(
 
 @Composable
 fun FilterRow(
-    filterOption: String,
-    onFilterChange: (String) -> Unit
+    isFavoritesSelected: Boolean,
+    onFilterChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -385,20 +406,18 @@ fun FilterRow(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // "All" radio button
         FilterRadioButton(
             text = "All",
-            selected = (filterOption == "All"),
-            onClick = { onFilterChange("All") }
+            selected = !isFavoritesSelected,
+            onClick = { onFilterChange(false) }
         )
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // "Favorites" radio button
         FilterRadioButton(
             text = "Favorites",
-            selected = (filterOption == "Favorites"),
-            onClick = { onFilterChange("Favorites") }
+            selected = isFavoritesSelected,
+            onClick = { onFilterChange(true) }
         )
     }
 }

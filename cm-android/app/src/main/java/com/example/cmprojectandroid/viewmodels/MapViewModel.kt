@@ -25,6 +25,13 @@ class MapViewModel : ViewModel() {
     private val _selectedLocation = MutableStateFlow<LatLng?>(null)
     val selectedLocation: StateFlow<LatLng?> = _selectedLocation
 
+    private val _isFavoritesSelected = mutableStateOf(false)
+    val isFavoritesSelected: State<Boolean> = _isFavoritesSelected
+
+    fun setFavoritesFilter(selected: Boolean) {
+        _isFavoritesSelected.value = selected
+    }
+
     fun setMapLoaded(loaded: Boolean) {
         _isMapLoaded.value = loaded
     }
