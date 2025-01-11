@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,8 +33,8 @@ fun StopPage(
     // Observe the list of buses from the ViewModel
     val buses by viewModel.buses.collectAsState()
 
-    // Observe the stop existence state
-    val stopExists by viewModel.stopExists.collectAsState()
+    var showModal by remember { mutableStateOf(false) }
+    var selectedBus by remember { mutableStateOf<Bus?>(null) }
 
     // fetch the buses from the view model
     LaunchedEffect(stopId) {
@@ -69,16 +71,36 @@ fun StopPage(
                         bus = bus,
                         onBusDetailsClick = { selectedBus ->
                             navController.navigate("bus_details/${selectedBus.busId}/${Uri.encode(selectedBus.busName)}")
+                        },
+                        onBellIconClick = { bus ->
+                            selectedBus = bus
+                            showModal = true
                         }
                     )
                 }
             }
+            if (showModal && selectedBus != null) {
+                NotificationDaysModal(
+                    busName = selectedBus!!.busName,
+                    busId = selectedBus!!.busId,
+                    onDismiss = {
+                        // Logic to dismiss the modal
+                        showModal = false
+                    },
+                    onSaveComplete = {
+                        // Logic to handle after saving is complete
+                        showModal = false
+                        // Additional logic if necessary
+                    }
+                )
+            }
+
         }
     }
 }
 
 @Composable
-fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit) {
+fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit, onBellIconClick: (Bus) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -102,13 +124,23 @@ fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit) {
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-            IconButton(
-                onClick = { onBusDetailsClick(bus) }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowRight,
-                    contentDescription = "Bus Details"
-                )
+            Row {
+                IconButton(
+                    onClick = { onBellIconClick(bus) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Set Notifications"
+                    )
+                }
+                IconButton(
+                    onClick = { onBusDetailsClick(bus) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowRight,
+                        contentDescription = "Bus Details"
+                    )
+                }
             }
         }
     }
