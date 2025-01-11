@@ -200,14 +200,14 @@ fun MapPage(
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
                 myLocationButtonEnabled = false,
-                compassEnabled = true,
-                indoorLevelPickerEnabled = true,
-                scrollGesturesEnabled = true,
-                zoomGesturesEnabled = true,
-                tiltGesturesEnabled = true,
-                rotationGesturesEnabled = true,
-                scrollGesturesEnabledDuringRotateOrZoom = true,
-                mapToolbarEnabled = true
+                compassEnabled = isMapLoaded,
+                indoorLevelPickerEnabled = isMapLoaded,
+                scrollGesturesEnabled = isMapLoaded,
+                zoomGesturesEnabled = isMapLoaded,
+                tiltGesturesEnabled = isMapLoaded,
+                rotationGesturesEnabled = isMapLoaded,
+                scrollGesturesEnabledDuringRotateOrZoom = isMapLoaded,
+                mapToolbarEnabled = isMapLoaded
             ),
             onMapClick = { latLng ->
                 // Hide keyboard and clear search when map is clicked
@@ -216,7 +216,7 @@ fun MapPage(
                 searchQuery = ""
             },
             properties = MapProperties(
-                isMyLocationEnabled = hasLocationPermission,
+                isMyLocationEnabled = hasLocationPermission && isMapLoaded,
             ),
             // TODO: ADD the same but when moving the map?
         ) {
@@ -368,30 +368,30 @@ fun MapPage(
         }
 
         // 4. Debug Text Overlay (Optional)
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp)
-        ) {
-            // Existing line
-            Text(
-                text = "Real-time message: $message",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            Text(
-                text = "VM Hash: ${mapViewModel.hashCode()}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text = "Map Loaded: ${mapViewModel.isMapLoaded.value}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text = "Lat: $latitude, Lng: $longitude",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
+        // Column(
+        //     modifier = Modifier
+        //         .align(Alignment.TopStart)
+        //         .padding(8.dp)
+        // ) {
+        //     // Existing line
+        //     Text(
+        //         text = "Real-time message: $message",
+        //         style = MaterialTheme.typography.bodySmall,
+        //         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        //     )
+        //     Text(
+        //         text = "VM Hash: ${mapViewModel.hashCode()}",
+        //         style = MaterialTheme.typography.bodySmall
+        //     )
+        //     Text(
+        //         text = "Map Loaded: ${mapViewModel.isMapLoaded.value}",
+        //         style = MaterialTheme.typography.bodySmall
+        //     )
+        //     Text(
+        //         text = "Lat: $latitude, Lng: $longitude",
+        //         style = MaterialTheme.typography.bodySmall
+        //     )
+        // }
     }
 }
 

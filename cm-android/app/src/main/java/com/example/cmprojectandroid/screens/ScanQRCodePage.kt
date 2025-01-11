@@ -2,6 +2,7 @@ package com.example.cmprojectandroid.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
 import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -15,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -27,8 +29,6 @@ import com.google.mlkit.vision.common.InputImage
 @Composable
 fun ScanQRCodePage(navController: NavController) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
@@ -63,26 +63,50 @@ fun ScanQRCodePage(navController: NavController) {
             Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error)
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(64.dp))
 
         if (hasCameraPermission) {
             QRCodeScannerView(
                 onResult = { rawValue ->
                     // Validate the scanned code
                     if (rawValue.isNullOrBlank()) {
-                        errorMessage = "Invalid QR code: empty value."
+                        errorMessage = "Invalid QR code."
                     } else if (isLikelyUrl(rawValue)) {
-                        errorMessage = "Invalid QR code: URLs are not allowed."
+                        errorMessage = "Invalid QR code."
                     } else {
-                        // Valid non-URL value: navigate to hello_page
-                        navController.navigate("hello_page")
+                        val result = parseQRCode(rawValue)
+                        if (result != null) {
+                            val (stopName, stopId) = result
+                            navController.navigate("stop_page/${Uri.encode(stopName)}/${stopId}")
+                        } else {
+                            errorMessage = "Invalid QR code."
+                        }
                     }
                 },
                 onError = { error ->
                     errorMessage = "Error scanning: ${error.message}"
                 }
             )
+
+            Spacer(modifier = Modifier.height(64.dp))
+
+            Text(
+                text = "Point the camera at a QR code from a stop to scan it.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+
         }
+    }
+}
+
+fun parseQRCode(rawValue: String): Pair<String, String>? {
+    val parts = rawValue.split("/")
+    return if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
+        Pair(parts[0].trim(), parts[1].trim())
+    } else {
+        null
     }
 }
 
