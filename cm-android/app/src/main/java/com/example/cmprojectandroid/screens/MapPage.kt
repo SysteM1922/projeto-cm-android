@@ -368,30 +368,30 @@ fun MapPage(
         }
 
         // 4. Debug Text Overlay (Optional)
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp)
-        ) {
-            // Existing line
-            Text(
-                text = "Real-time message: $message",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            Text(
-                text = "VM Hash: ${mapViewModel.hashCode()}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text = "Map Loaded: ${mapViewModel.isMapLoaded.value}",
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text = "Lat: $latitude, Lng: $longitude",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
+        // Column(
+        //     modifier = Modifier
+        //         .align(Alignment.TopStart)
+        //         .padding(8.dp)
+        // ) {
+        //     // Existing line
+        //     Text(
+        //         text = "Real-time message: $message",
+        //         style = MaterialTheme.typography.bodySmall,
+        //         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        //     )
+        //     Text(
+        //         text = "VM Hash: ${mapViewModel.hashCode()}",
+        //         style = MaterialTheme.typography.bodySmall
+        //     )
+        //     Text(
+        //         text = "Map Loaded: ${mapViewModel.isMapLoaded.value}",
+        //         style = MaterialTheme.typography.bodySmall
+        //     )
+        //     Text(
+        //         text = "Lat: $latitude, Lng: $longitude",
+        //         style = MaterialTheme.typography.bodySmall
+        //     )
+        // }
     }
 }
 

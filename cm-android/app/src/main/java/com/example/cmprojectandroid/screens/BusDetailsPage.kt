@@ -22,6 +22,7 @@ import com.example.cmprojectandroid.viewmodels.BusDetailsViewModel
 @Composable
 fun BusDetailsPage(
     busId: String,
+    busName: String,
     navController: NavHostController,
     viewModel: BusDetailsViewModel = viewModel()
 ) {
@@ -36,7 +37,7 @@ fun BusDetailsPage(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Bus Details") }
+                title = { Text(text = "Bus: $busName (ID: $busId)") } // Display the name and ID
             )
         }
     ) { paddingValues ->

@@ -136,20 +136,26 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
             StopPage(
                 stopName = stopName,
                 stopId = stopId,
-                onBusDetailsClick = { bus ->
-                    // Navigate to Bus Details Page with busId
-                    navController.navigate("bus_details/${bus.busId}")
-                }
+                navController = navController
             )
         }
 
         // BusDetailsPage route with navController passed
         composable(
-            route = "bus_details/{busId}",
-            arguments = listOf(navArgument("busId") { type = NavType.StringType })
+            route = "bus_details/{busId}/{busName}",
+            arguments = listOf(
+                navArgument("busId") { type = NavType.StringType },
+                navArgument("busName") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
-            val busId = backStackEntry.arguments?.getString("busId") ?: "Unknown Bus"
-            BusDetailsPage(busId = busId, navController = navController)
+            val busId = backStackEntry.arguments?.getString("busId") ?: "Unknown Bus ID"
+            val busName = backStackEntry.arguments?.getString("busName")?.let { Uri.decode(it) } ?: "Unknown Bus Name"
+
+            BusDetailsPage(
+                busId = busId,
+                busName = busName,
+                navController = navController
+            )
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.cmprojectandroid.screens
 
 // THIS IS THE PAGE FOR EACH BUS, COMING FROM THE STOP PAGE
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.example.cmprojectandroid.Model.Bus
 import com.example.cmprojectandroid.viewmodels.StopViewModel
 
@@ -23,7 +25,7 @@ import com.example.cmprojectandroid.viewmodels.StopViewModel
 fun StopPage(
     stopName: String,
     stopId: String,
-    onBusDetailsClick: (Bus) -> Unit,
+    navController: NavHostController,
     viewModel: StopViewModel = viewModel()
 ) {
     // Observe the list of buses from the ViewModel
@@ -60,7 +62,12 @@ fun StopPage(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(buses) { bus ->
-                    BusItem(bus = bus, onBusDetailsClick = onBusDetailsClick)
+                    BusItem(
+                        bus = bus,
+                        onBusDetailsClick = { selectedBus ->
+                            navController.navigate("bus_details/${selectedBus.busId}/${Uri.encode(selectedBus.busName)}")
+                        }
+                    )
                 }
             }
         }
