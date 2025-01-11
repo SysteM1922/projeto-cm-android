@@ -2,6 +2,7 @@ package com.example.cmprojectandroid.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -48,12 +49,24 @@ import com.example.cmprojectandroid.viewmodels.MapViewModel
 @Composable
 fun MapPage(
     navController: NavHostController,
-    latitude: Double = 40.643771,
-    longitude: Double = -8.640994,
-    selectedStopIdInitially: String = "",
+    latitude: Double? = null,
+    longitude: Double? = null,
+    selectedStopIdInitially: String? = null,
     stopsViewModel: StopsViewModel = viewModel(),
-    mapViewModel: MapViewModel = viewModel() // Add MapViewModel
+    mapViewModel: MapViewModel
 ) {
+
+    SideEffect {
+        Log.d("MapDebug", """
+            MapPage recomposed:
+            - MapViewModel hashcode: ${mapViewModel.hashCode()}
+            - Latitude: $latitude
+            - Longitude: $longitude
+            - StopId: $selectedStopIdInitially
+            - isMapLoaded: ${mapViewModel.isMapLoaded.value}
+        """.trimIndent())
+    }
+
     val context = LocalContext.current
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -72,6 +85,7 @@ fun MapPage(
             }
         }
     )
+    val isMapLoaded by mapViewModel.isMapLoaded
 
     val testDataViewModel: TestDataViewModel = viewModel()
     val message by testDataViewModel.message.collectAsState()
@@ -108,6 +122,8 @@ fun MapPage(
         position = mapViewModel.cameraPosition.value
     }
 
+    var currentCameraPosition by remember { mutableStateOf(cameraPositionState.position) }
+
     // Update ViewModel when camera position changes
     LaunchedEffect(cameraPositionState.position) {
         mapViewModel.updateCameraPosition(cameraPositionState.position)
@@ -117,14 +133,13 @@ fun MapPage(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
 
-    var isMapLoading by remember { mutableStateOf(true) }
 
     // Initialize selected stop based on ViewModel's initial value
     LaunchedEffect(selectedStopIdInitially) {
         if (!hasLocationPermission) {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        if (selectedStopIdInitially.isNotEmpty()) {
+        if (selectedStopIdInitially?.isNotEmpty() == true) {
             val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
             if (foundStop != null) {
                 cameraPositionState.animate(
@@ -141,14 +156,13 @@ fun MapPage(
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
-            contentPadding = PaddingValues(top = 1000.dp, bottom = 100.dp),
+            contentPadding = PaddingValues(top = 200.dp, bottom = 100.dp),
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             onMapLoaded = {
-                // The map is 100% ready
-                isMapLoading = false
+                mapViewModel.setMapLoaded(true)
                 // Perform camera update if we have a valid stop
-                if (selectedStopIdInitially.isNotEmpty()) {
+                if (selectedStopIdInitially?.isNotEmpty() == true) {
                     val foundStop = stops.firstOrNull { it.stop_id == selectedStopIdInitially }
                     if (foundStop != null) {
                         CoroutineScope(Dispatchers.Main).launch {
@@ -180,7 +194,7 @@ fun MapPage(
                 // Hide keyboard and clear search when map is clicked
                 focusManager.clearFocus()
                 keyboardController?.hide()
-                mapViewModel.searchQuery = ""
+                searchQuery = ""
             },
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
@@ -222,14 +236,11 @@ fun MapPage(
             }
         }
 
-        if (isMapLoading) {
+        if (!mapViewModel.isMapLoaded.value) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        // Slightly dim the background
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
-                    ),
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
@@ -336,14 +347,30 @@ fun MapPage(
         }
 
         // 4. Debug Text Overlay (Optional)
-        Text(
-            text = "Real-time message: $message",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+        Column(
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(8.dp)
-        )
+        ) {
+            // Existing line
+            Text(
+                text = "Real-time message: $message",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+            Text(
+                text = "VM Hash: ${mapViewModel.hashCode()}",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = "Map Loaded: ${mapViewModel.isMapLoaded.value}",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = "Lat: $latitude, Lng: $longitude",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }
 

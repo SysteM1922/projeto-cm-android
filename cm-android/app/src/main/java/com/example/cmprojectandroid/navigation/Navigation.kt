@@ -17,7 +17,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.cmprojectandroid.screens.*
+import com.example.cmprojectandroid.viewmodels.MainViewModel
 import com.example.cmprojectandroid.viewmodels.MapViewModel
+
 
 object NavRoutes {
     const val Login = "login"
@@ -27,7 +29,12 @@ object NavRoutes {
 }
 
 sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
-    object Map : BottomNavItem("map", "Map", Icons.Default.Star)
+
+    object Map : BottomNavItem(
+        route = "map?lat={lat}&lng={lng}&stopId={stopId}",
+        title = "Map",
+        icon = Icons.Default.Star
+    )
     object ScanQRCode : BottomNavItem("scan_qrcode", "Scan QR Code", Icons.Default.Star)
     object NFCPage : BottomNavItem("nfc_page", "NFC Page", Icons.Default.Star)
     object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
@@ -35,6 +42,7 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
 
 @Composable
 fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifier) {
+    val mainViewModel = remember { MainViewModel() }
     NavHost(
         navController,
         startDestination = NavRoutes.Login,
@@ -85,23 +93,18 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
                 }
             )
         ) { backStackEntry ->
-            // Retrieve the MapViewModel scoped to the NavBackStackEntry
-            val mapViewModel: MapViewModel = viewModel(
-                key = "map_view_model",
-                viewModelStoreOwner  = navController.getBackStackEntry("map?lat={lat}&lng={lng}&stopId={stopId}")
-            )
 
+            // Now retrieving them from the arguments is fine
             val latString = backStackEntry.arguments?.getString("lat") ?: "40.643771"
             val lngString = backStackEntry.arguments?.getString("lng") ?: "-8.640994"
-            val stopId = backStackEntry.arguments?.getString("stopId") ?: ""
+            val stopId    = backStackEntry.arguments?.getString("stopId") ?: ""
 
-            // Pass them to MapPage:
             MapPage(
                 navController = navController,
-                latitude = latString.toDoubleOrNull() ?: 40.643771,
-                longitude = lngString.toDoubleOrNull() ?: -8.640994,
+                latitude = latString.toDoubleOrNull(),
+                longitude = lngString.toDoubleOrNull(),
                 selectedStopIdInitially = stopId,
-                mapViewModel = mapViewModel // Pass the ViewModel
+                mapViewModel = mainViewModel.mapViewModel
             )
         }
 
@@ -158,6 +161,7 @@ fun BottomNavigationBar(navController: NavHostController) {
     NavigationBar {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
+
         items.forEach { item ->
             NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.title) },
@@ -166,13 +170,10 @@ fun BottomNavigationBar(navController: NavHostController) {
                 onClick = {
                     if (currentRoute != item.route) {
                         navController.navigate(item.route) {
-                            // Pop up to the start destination to avoid building up a large back stack
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
                             }
-                            // Avoid multiple copies of the same destination
                             launchSingleTop = true
-                            // Restore state when reselecting a previously selected item
                             restoreState = true
                         }
                     }
