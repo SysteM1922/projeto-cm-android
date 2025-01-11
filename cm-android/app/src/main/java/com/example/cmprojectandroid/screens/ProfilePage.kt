@@ -37,7 +37,6 @@ fun ProfilePage(
     val currentUser = auth.currentUser
 
     val testDataViewModel: TestDataViewModel = viewModel()
-    val coroutineScope = rememberCoroutineScope()
 
     val favorites by userProfileViewModel.favorites.collectAsState()
 
@@ -89,61 +88,78 @@ fun ProfilePage(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Welcome, ${currentUser?.displayName ?: currentUser?.email ?: "User"}")
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Enhanced Trip History Section
-        ExpandableSection(
-            title = "Trip History",
-            items = tripHistory,
-            isExpanded = isTripHistoryExpanded,
-            onExpandToggle = { isTripHistoryExpanded = !isTripHistoryExpanded }
-        ) { trip ->
-            TripHistoryCard(trip)
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        ExpandableSection(
-            title = "Active Notifications",
-            items = activeNotifications,
-            isExpanded = isNotificationsExpanded,
-            onExpandToggle = { isNotificationsExpanded = !isNotificationsExpanded }
-        ) { notification ->
-            NotificationCard(notification)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Favorite Stops Section
-        ExpandableSection(
-            title = "Favorite Stops",
-            items = favorites,
-            isExpanded = isFavoritesExpanded,
-            onExpandToggle = { isFavoritesExpanded = !isFavoritesExpanded }
-        ) { favorite ->
-            FavoriteItemCard(
-                favorite = favorite,
-                onRemove = { favoriteToRemove ->
-                    userProfileViewModel.removeFavorite(favoriteToRemove)
-                }
-            )
-        }
-
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                auth.signOut()
-                navController.navigate(NavRoutes.Login) {
-                    popUpTo(0)
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Logout")
+            Text(
+                text = "Welcome, ${currentUser?.displayName ?: currentUser?.email ?: "User"}",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f) // Makes the text take up available space
+            )
+
+            Button(
+                onClick = {
+                    auth.signOut()
+                    navController.navigate(NavRoutes.Login) {
+                        popUpTo(0)
+                    }
+                }
+            ) {
+                Text("Logout")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp) // Add spacing between sections
+        ) {
+            // Trip History Section
+            item {
+                ExpandableSection(
+                    title = "Trip History",
+                    items = tripHistory,
+                    isExpanded = isTripHistoryExpanded,
+                    onExpandToggle = { isTripHistoryExpanded = !isTripHistoryExpanded }
+                ) { trip ->
+                    TripHistoryCard(trip)
+                }
+            }
+
+            item {
+                ExpandableSection(
+                    title = "Active Notifications",
+                    items = activeNotifications,
+                    isExpanded = isNotificationsExpanded,
+                    onExpandToggle = { isNotificationsExpanded = !isNotificationsExpanded }
+                ) { notification ->
+                    NotificationCard(notification)
+                }
+            }
+
+            // Favorite Stops Section
+            item {
+                ExpandableSection(
+                    title = "Favorite Stops",
+                    items = favorites,
+                    isExpanded = isFavoritesExpanded,
+                    onExpandToggle = { isFavoritesExpanded = !isFavoritesExpanded }
+                ) { favorite ->
+                    FavoriteItemCard(
+                        favorite = favorite,
+                        onRemove = { favoriteToRemove ->
+                            userProfileViewModel.removeFavorite(favoriteToRemove)
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -305,7 +321,7 @@ fun NotificationCard(notification: String) {
 @Composable
 fun FavoriteItemCard(
     favorite: Favorite,
-    onRemove: (Favorite) -> Unit // Callback to handle removal
+    onRemove: (Favorite) -> Unit
 ) {
     Card(
         modifier = Modifier
