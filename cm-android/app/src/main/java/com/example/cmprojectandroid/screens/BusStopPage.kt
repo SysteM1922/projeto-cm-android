@@ -22,11 +22,17 @@ import com.example.cmprojectandroid.viewmodels.StopViewModel
 @Composable
 fun StopPage(
     stopName: String,
+    stopId: String,
     onBusDetailsClick: (Bus) -> Unit,
     viewModel: StopViewModel = viewModel()
 ) {
     // Observe the list of buses from the ViewModel
     val buses by viewModel.buses.collectAsState()
+
+    // fetch the buses from the view model
+    LaunchedEffect(stopId) {
+        viewModel.fetchBusesForStop(stopId)
+    }
 
     Scaffold(
         topBar = {

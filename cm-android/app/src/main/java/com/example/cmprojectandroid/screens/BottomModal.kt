@@ -92,9 +92,7 @@ fun BottomModal(
                     Button(
                         onClick = {
                             // Navigate to StopPage with the stop name
-                            val encodedStopName = Uri.encode(stop.stop_name)
-                            navController.navigate("stop_page/$encodedStopName") {
-                                // Optional: Pop up to the start destination if needed
+                            navController.navigate("stop_page/${Uri.encode(stop.stop_name)}/${stop.stop_id}") {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }

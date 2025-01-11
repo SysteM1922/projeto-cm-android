@@ -1,33 +1,73 @@
 package com.example.cmprojectandroid.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.cmprojectandroid.Model.Bus
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class StopViewModel : ViewModel() {
+
+    private val firestore = FirebaseFirestore.getInstance()
 
     // Backing property for buses
     private val _buses = MutableStateFlow<List<Bus>>(emptyList())
     val buses: StateFlow<List<Bus>> = _buses
 
-    init {
-        // Mock data initialization
-        loadMockBuses()
-    }
 
-    private fun loadMockBuses() {
-        val mockBuses = listOf(
-            Bus(busId = "bus_1", busName = "Bus 11", arrivalTime = "08:15 AM"),
-            Bus(busId = "bus_2", busName = "Bus 5 (Santiago)", arrivalTime = "08:20 AM"),
-            Bus(busId = "bus_3", busName = "Bus 5 (Solposto)", arrivalTime = "08:25 AM")
-            // Add more mock buses as needed
-        )
-        _buses.value = mockBuses
-    }
+    fun fetchBusesForStop(stopId: String) {
+        viewModelScope.launch {
+            try {
+                // Step 1: Query stop_times collection by stop_id
+                val stopTimesSnapshot = firestore.collection("stop_times")
+                    .whereEqualTo("stop_id", stopId)
+                    .get()
+                    .await()
 
-    // Function to simulate updating buses (for future integration)
-    fun updateBuses(newBuses: List<Bus>) {
-        _buses.value = newBuses
+                // Extract trip IDs and departure times from stop_times
+                val tripIdToDepartureTime = stopTimesSnapshot.documents.mapNotNull { doc ->
+                    val tripId = doc.getString("trip_id")
+                    val departureTime = doc.getString("departure_time")
+                    if (tripId != null && departureTime != null) {
+                        tripId to departureTime
+                    } else null
+                }.toMap()
+
+                if (tripIdToDepartureTime.isEmpty()) {
+                    _buses.value = emptyList()
+                    return@launch
+                }
+
+                // Step 2: Query trips collection by trip_ids
+                val tripsSnapshot = firestore.collection("trips")
+                    .whereIn("trip_id", tripIdToDepartureTime.keys.toList())
+                    .get()
+                    .await()
+
+                // Map trip documents to buses, including the arrival time
+                val buses = tripsSnapshot.documents.mapNotNull { doc ->
+                    val tripId = doc.getString("trip_id")
+                    val busName = doc.getString("trip_short_name")
+                    val arrivalTime = tripIdToDepartureTime[tripId]
+                    if (tripId != null && busName != null && arrivalTime != null) {
+                        Bus(
+                            busId = tripId,
+                            busName = busName,
+                            arrivalTime = arrivalTime
+                        )
+                    } else null
+                }
+
+                // Update the state flow with fetched buses
+                _buses.value = buses
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _buses.value = emptyList() // Handle errors gracefully
+            }
+        }
     }
 }

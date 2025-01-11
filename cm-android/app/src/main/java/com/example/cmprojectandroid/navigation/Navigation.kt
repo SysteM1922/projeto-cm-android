@@ -24,7 +24,7 @@ import com.example.cmprojectandroid.viewmodels.MapViewModel
 object NavRoutes {
     const val Login = "login"
     const val SignUp = "sign_up"
-    const val StopPage = "stop_page/{stopName}"
+    const val StopPage = "stop_page/{stopName}/{stopId}"
     const val MapPage = "map?lat={lat}&lng={lng}&stopId={stopId}"
 }
 
@@ -124,14 +124,18 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
             ProfilePage(navController)
         }
 
-        // StopPage route with stopName as StringType
         composable(
             route = NavRoutes.StopPage,
-            arguments = listOf(navArgument("stopName") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("stopName") { type = NavType.StringType },
+                navArgument("stopId") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
             val stopName = backStackEntry.arguments?.getString("stopName")?.let { Uri.decode(it) } ?: "Unknown Stop"
+            val stopId = backStackEntry.arguments?.getString("stopId") ?: "Unknown Stop ID"
             StopPage(
                 stopName = stopName,
+                stopId = stopId,
                 onBusDetailsClick = { bus ->
                     // Navigate to Bus Details Page with busId
                     navController.navigate("bus_details/${bus.busId}")
