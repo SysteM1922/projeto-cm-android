@@ -20,7 +20,7 @@ class BusDetailsViewModel : ViewModel() {
     private fun loadMockStops() {
         val mockStops = listOf(
             Stop(
-                stop_id = "stop_id11_1",
+                stop_id = "ROUS",
                 stop_name = "Estação de Aveiro",
                 stop_lat = 40.643771,
                 stop_lon = -8.640994

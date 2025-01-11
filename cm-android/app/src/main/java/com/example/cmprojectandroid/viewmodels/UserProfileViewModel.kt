@@ -24,8 +24,8 @@ class UserProfileViewModel : ViewModel() {
                 val favoritesList = document.get("favorites") as? List<Map<String, Any>> ?: listOf()
                 val favorites = favoritesList.map { map ->
                     Favorite(
-                        stop_id = map["stop_id"] as? String ?: "",
-                        stop_name = map["stop_name"] as? String ?: ""
+                        stop_id = map["id"] as? String ?: "",
+                        stop_name = map["name"] as? String ?: ""
                     )
                 }
                 _favorites.value = favorites
@@ -50,7 +50,7 @@ class UserProfileViewModel : ViewModel() {
 
                 // Update Firestore
                 userRef.set(
-                    mapOf("favorites" to updatedFavorites.map { mapOf("stop_id" to it.stop_id, "stop_name" to it.stop_name) }),
+                    mapOf("favorites" to updatedFavorites.map { mapOf("id" to it.stop_id, "name" to it.stop_name) }),
                     com.google.firebase.firestore.SetOptions.merge()
                 ).await()
             } catch (e: Exception) {

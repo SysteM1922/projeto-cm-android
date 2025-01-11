@@ -42,6 +42,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
+import com.example.cmprojectandroid.viewmodels.MapViewModel
+
 
 @Composable
 fun MapPage(
@@ -49,7 +51,8 @@ fun MapPage(
     latitude: Double = 40.643771,
     longitude: Double = -8.640994,
     selectedStopIdInitially: String = "",
-    stopsViewModel: StopsViewModel = viewModel()
+    stopsViewModel: StopsViewModel = viewModel(),
+    mapViewModel: MapViewModel = viewModel() // Add MapViewModel
 ) {
     val context = LocalContext.current
     var hasLocationPermission by remember {
@@ -100,9 +103,14 @@ fun MapPage(
         temp
     }
 
-    // Camera state for the map
+    // Camera state from ViewModel
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 12f)
+        position = mapViewModel.cameraPosition.value
+    }
+
+    // Update ViewModel when camera position changes
+    LaunchedEffect(cameraPositionState.position) {
+        mapViewModel.updateCameraPosition(cameraPositionState.position)
     }
 
     // Keyboard controller and focus manager for handling keyboard actions
@@ -111,6 +119,7 @@ fun MapPage(
 
     var isMapLoading by remember { mutableStateOf(true) }
 
+    // Initialize selected stop based on ViewModel's initial value
     LaunchedEffect(selectedStopIdInitially) {
         if (!hasLocationPermission) {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -171,7 +180,7 @@ fun MapPage(
                 // Hide keyboard and clear search when map is clicked
                 focusManager.clearFocus()
                 keyboardController?.hide()
-                searchQuery = ""
+                mapViewModel.searchQuery = ""
             },
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
