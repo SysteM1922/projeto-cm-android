@@ -23,8 +23,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.driverapp.navigation.BottomNavItem
-import com.example.driverapp.navigation.BottomNavigationBar
 import com.example.driverapp.navigation.NavRoutes
 import com.example.driverapp.navigation.NavigationHost
 import com.example.driverapp.ui.theme.DriverAppTheme
@@ -163,8 +161,8 @@ fun MainScreen(nfcViewModel: NFCViewModel) {
 
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
-            // User is logged in, navigate to Map page
-            navController.navigate(BottomNavItem.Map.route) {
+            // User is logged in, navigate to Driver page
+            navController.navigate(NavRoutes.DriverPage) {
                 popUpTo(0)
             }
         } else {
@@ -175,21 +173,8 @@ fun MainScreen(nfcViewModel: NFCViewModel) {
         }
     }
 
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-
-    val showBottomBar = when (currentRoute) {
-        NavRoutes.Login, NavRoutes.SignUp -> false
-        else -> true
-    }
-
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (showBottomBar) {
-                BottomNavigationBar(navController, nfcViewModel)
-            }
-        }
     ) { innerPadding ->
         NavigationHost(navController, nfcViewModel, Modifier.padding(innerPadding))
     }

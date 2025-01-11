@@ -55,15 +55,20 @@ fun LoginPage(onNavigateToSignUp: () -> Unit, onLoginSuccess: () -> Unit) {
                 isLoading = true
                 errorMessage = null
                 auth.signInWithEmailAndPassword(email.trim(), password)
-                    .addOnCompleteListener { task ->
-                        isLoading = false
-                        if (task.isSuccessful) {
-                            // Sign-in success
-                            onLoginSuccess()
-                        } else {
-                            // Sign-in failed
-                            errorMessage = task.exception?.message ?: "Login failed"
+                    .addOnSuccessListener {
+                        auth.currentUser?.getIdToken(true)?.addOnSuccessListener { result ->
+                            if (result.claims["role"] == "driver") {
+                                onLoginSuccess()
+                            } else {
+                                errorMessage = "You are not authorized to use this app"
+                            }
                         }
+                    }
+                    .addOnFailureListener {
+                        errorMessage = "Login failed: ${it.message}"
+                    }
+                    .addOnCompleteListener {
+                        isLoading = false
                     }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -78,14 +83,9 @@ fun LoginPage(onNavigateToSignUp: () -> Unit, onLoginSuccess: () -> Unit) {
                 Text("Login")
             }
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(
-            onClick = { onNavigateToSignUp() },
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text("Don't have an account? Sign Up")
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(errorMessage!!, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
         }
     }
 }
