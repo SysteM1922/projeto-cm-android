@@ -25,47 +25,51 @@ class StopViewModel : ViewModel() {
     fun fetchBusesForStop(stopId: String) {
         viewModelScope.launch {
             try {
-                val stopSnapshot = firestore.collection("stops")
+                // Step 1: Query stop_times collection by stop_id
+                val stopTimesSnapshot = firestore.collection("stop_times")
                     .whereEqualTo("stop_id", stopId)
                     .get()
                     .await()
 
-                if (stopSnapshot.isEmpty) {
-                    _stopExists.value = false
-                } else {
-                    _stopExists.value = true
-                    // Fetch buses only if the stop exists
-                    val stopTimesSnapshot = firestore.collection("stop_times")
-                        .whereEqualTo("stop_id", stopId)
-                        .get()
-                        .await()
+                // Extract trip IDs and departure times from stop_times
+                val tripIdToDepartureTime = stopTimesSnapshot.documents.mapNotNull { doc ->
+                    val tripId = doc.getString("trip_id")
+                    val departureTime = doc.getString("departure_time")
+                    if (tripId != null && departureTime != null) {
+                        tripId to departureTime
+                    } else null
+                }.toMap()
 
-                    val tripIds = stopTimesSnapshot.documents.mapNotNull { it.getString("trip_id") }
-                    if (tripIds.isEmpty()) {
-                        _buses.value = emptyList()
-                    } else {
-                        val tripsSnapshot = firestore.collection("trips")
-                            .whereIn("trip_id", tripIds)
-                            .get()
-                            .await()
-
-                        val buses = tripsSnapshot.documents.mapNotNull { doc ->
-                            val tripId = doc.getString("trip_id")
-                            val busName = doc.getString("trip_short_name")
-                            val arrivalTime = stopTimesSnapshot.documents.find {
-                                it.getString("trip_id") == tripId
-                            }?.getString("departure_time")
-
-                            if (tripId != null && busName != null && arrivalTime != null) {
-                                Bus(busId = tripId, busName = busName, arrivalTime = arrivalTime)
-                            } else null
-                        }
-                        _buses.value = buses
-                    }
+                if (tripIdToDepartureTime.isEmpty()) {
+                    _buses.value = emptyList()
+                    return@launch
                 }
+
+                // Step 2: Query trips collection by trip_ids
+                val tripsSnapshot = firestore.collection("trips")
+                    .whereIn("trip_id", tripIdToDepartureTime.keys.toList())
+                    .get()
+                    .await()
+
+                // Map trip documents to buses, including the arrival time
+                val buses = tripsSnapshot.documents.mapNotNull { doc ->
+                    val tripId = doc.getString("trip_id")
+                    val busName = doc.getString("trip_short_name")
+                    val arrivalTime = tripIdToDepartureTime[tripId]
+                    if (tripId != null && busName != null && arrivalTime != null) {
+                        Bus(
+                            busId = tripId,
+                            busName = busName,
+                            arrivalTime = arrivalTime
+                        )
+                    } else null
+                }
+
+                // Update the state flow with fetched buses
+                _buses.value = buses
             } catch (e: Exception) {
                 e.printStackTrace()
-                _stopExists.value = false // Handle failure gracefully
+                _buses.value = emptyList() // Handle errors gracefully
             }
         }
     }

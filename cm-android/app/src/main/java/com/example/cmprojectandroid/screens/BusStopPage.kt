@@ -41,71 +41,36 @@ fun StopPage(
 
     Scaffold(
         topBar = {
-            when (stopExists) {
-                null -> { // Loading state
-                    TopAppBar(title = { Text(text = "Loading...") })
-                }
-                false -> { // Stop not found
-                    TopAppBar(title = { Text(text = "Stop Not Found") })
-                }
-                true -> {
-                    TopAppBar(title = { Text(text = stopName) })
-                }
-            }
+            TopAppBar(
+                title = { Text(text = stopName) }
+            )
         }
     ) { paddingValues ->
-        when (stopExists) {
-            null -> { // Loading state
-                Box(
-                    modifier = Modifier
-                        .padding(paddingValues)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+        if (buses.isEmpty()) {
+            // Display a message when no buses are available
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "No buses available at this time.")
             }
-            false -> { // Stop doesn't exist
-                Box(
-                    modifier = Modifier
-                        .padding(paddingValues)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Stop not found!",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-            true -> { // Stop exists, display buses
-                if (buses.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .padding(paddingValues)
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "No buses available at this time.")
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .padding(paddingValues)
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(buses) { bus ->
-                            BusItem(
-                                bus = bus,
-                                onBusDetailsClick = { selectedBus ->
-                                    navController.navigate("bus_details/${selectedBus.busId}/${Uri.encode(selectedBus.busName)}")
-                                }
-                            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(buses) { bus ->
+                    BusItem(
+                        bus = bus,
+                        onBusDetailsClick = { selectedBus ->
+                            navController.navigate("bus_details/${selectedBus.busId}/${Uri.encode(selectedBus.busName)}")
                         }
-                    }
+                    )
                 }
             }
         }

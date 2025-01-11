@@ -216,7 +216,7 @@ fun MapPage(
                 searchQuery = ""
             },
             properties = MapProperties(
-                isMyLocationEnabled = hasLocationPermission,
+                isMyLocationEnabled = hasLocationPermission && isMapLoaded,
             ),
             // TODO: ADD the same but when moving the map?
         ) {

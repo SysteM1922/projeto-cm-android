@@ -69,7 +69,7 @@ fun ProfilePage(
 
         // Favorites section
         Text(
-            text = "Your Favorites",
+            text = "Your Favorites Stops",
             style = MaterialTheme.typography.titleLarge
         )
 
@@ -77,7 +77,7 @@ fun ProfilePage(
 
         if (favorites.isEmpty()) {
             // If no favorites, show a simple text
-            Text(text = "No favorites found.")
+            Text(text = "No favorite stops found.")
         } else {
             // Display favorites in a LazyColumn
             LazyColumn(
