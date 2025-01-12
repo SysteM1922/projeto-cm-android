@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cmprojectandroid.Model.Favorite
@@ -31,6 +32,17 @@ import com.example.cmprojectandroid.viewmodels.UserProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 
+
+@Composable
+fun ExitIcon(onExitClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(onClick = onExitClick, modifier = modifier) {
+        Icon(
+            painter = painterResource(id = R.drawable.exit),
+            contentDescription = "Exit",
+            modifier = Modifier.size(32.dp)
+        )
+    }
+}
 
 @Composable
 fun ProfilePage(
@@ -98,17 +110,12 @@ fun ProfilePage(
             Text(
                 text = "Welcome, ${currentUser?.displayName ?: currentUser?.email ?: "User"}",
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f) // Makes the text take up available space
+                modifier = Modifier.weight(1f),
+                fontSize = 24.sp
             )
 
-            Button(
-                onClick = {
-                    auth.signOut()
-                    onLogout()
-                }
-            ) {
-                Text("Logout")
-            }
+            ExitIcon(onExitClick = { onLogout() })
+
         }
 
         Spacer(modifier = Modifier.height(16.dp))
