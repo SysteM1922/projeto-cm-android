@@ -354,11 +354,13 @@ fun NotificationCard(preference: Preference, viewModel: PreferencesViewModel, on
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
-                Text(
-                    text = "Today: ${preference.today}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
+                if (preference.today != "") {
+                    Text(
+                        text = "Today: ${preference.today}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             // Put a wrench icon at the end of the row
