@@ -123,13 +123,14 @@ class PreferencesViewModel : ViewModel() {
         // adding, updating, or removing the preference
         val isEmptyPreference = preference.days.isEmpty() && preference.today.isEmpty()
 
-        if (_preferences.value.containsKey(key)) {
-            val oldPreference = _preferences.value[key]
+        var oldPreference : Preference? = null
 
-            if (oldPreference != null) {
-                updateNotificationTopics(oldPreference, preference)
-            }
+        if (_preferences.value.containsKey(key)) {
+            oldPreference = _preferences.value[key]!!
+        } else {
+            oldPreference = Preference(trip_id = preference.trip_id, stop_id = preference.stop_id, days = emptyList(), today = "", trip_short_name = "", stop_name = "")
         }
+        updateNotificationTopics(oldPreference, preference)
 
         if (isEmptyPreference) {
             // Remove the entry both locally and in Firestore if it's empty
