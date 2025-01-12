@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,7 +51,12 @@ fun StopPage(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = stopName) }
+                title = { Text(text = stopName) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Navigate back")
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -150,7 +157,7 @@ fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit, onBellIconClick: (Bus) -
                     onClick = { onBellIconClick(bus) }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.DateRange,
+                        imageVector = Icons.Default.Notifications,
                         contentDescription = "Set Notifications"
                     )
                 }
