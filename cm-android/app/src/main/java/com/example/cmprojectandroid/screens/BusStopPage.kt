@@ -67,7 +67,8 @@ fun StopPage(
             LazyColumn(
                 modifier = Modifier
                     .padding(paddingValues)
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .fillMaxHeight(if (showModal) 0.6f else 1f)
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
