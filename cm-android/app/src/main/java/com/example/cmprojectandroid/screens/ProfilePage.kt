@@ -1,5 +1,7 @@
 package com.example.cmprojectandroid.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -44,12 +46,17 @@ fun ExitIcon(onExitClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ProfilePage(
     onLogout: () -> Unit,
     userProfileViewModel: UserProfileViewModel = viewModel(),
     preferencesViewModel: PreferencesViewModel = viewModel()
 ) {
+
+    var showModal by remember { mutableStateOf(false) }
+    var selectedPreference by remember { mutableStateOf<Preference?>(null) }
+
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
 
@@ -88,83 +95,113 @@ fun ProfilePage(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Profile Page",
-            style = MaterialTheme.typography.headlineMedium
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Welcome, ${currentUser?.displayName ?: currentUser?.email ?: "User"}",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-                fontSize = 24.sp
-            )
-
-            ExitIcon(onExitClick = { onLogout() })
-
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        LazyColumn(
+    Box(modifier = Modifier.fillMaxSize()) {  // Wrap everything in a Box
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp) // Add spacing between sections
+                .padding(16.dp)
         ) {
-            // Trip History Section
-            item {
-                ExpandableSection(
-                    title = "Trip History",
-                    items = tripHistory,
-                    isExpanded = isTripHistoryExpanded,
-                    onExpandToggle = { isTripHistoryExpanded = !isTripHistoryExpanded }
-                ) { trip ->
-                    TripHistoryCard(trip)
-                }
+            Text(
+                text = "Profile Page",
+                style = MaterialTheme.typography.headlineMedium
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Welcome, ${currentUser?.displayName ?: currentUser?.email ?: "User"}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 24.sp
+                )
+
+                ExitIcon(onExitClick = { onLogout() })
+
             }
 
-            item {
-                ExpandableSection(
-                    title = "Active Notifications",
-                    items = preferences.values.toList(),
-                    isExpanded = isNotificationsExpanded,
-                    onExpandToggle = { isNotificationsExpanded = !isNotificationsExpanded }
-                ) { preference ->
-                    NotificationCard(preference)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp) // Add spacing between sections
+            ) {
+                // Trip History Section
+                item {
+                    ExpandableSection(
+                        title = "Trip History",
+                        items = tripHistory,
+                        isExpanded = isTripHistoryExpanded,
+                        onExpandToggle = { isTripHistoryExpanded = !isTripHistoryExpanded }
+                    ) { trip ->
+                        TripHistoryCard(trip)
+                    }
+                }
+
+                item {
+                    ExpandableSection(
+                        title = "Active Notifications",
+                        items = preferences.values.toList(),
+                        isExpanded = isNotificationsExpanded,
+                        onExpandToggle = { isNotificationsExpanded = !isNotificationsExpanded }
+                    ) { preference ->
+                        NotificationCard(
+                            preference = preference,
+                            viewModel = preferencesViewModel,
+                            onSettingsClick = {
+                                selectedPreference = preference
+                                showModal = true
+                            }
+                        )
+                    }
+                }
+
+                // Favorite Stops Section
+                item {
+                    ExpandableSection(
+                        title = "Favorite Stops",
+                        items = favorites,
+                        isExpanded = isFavoritesExpanded,
+                        onExpandToggle = { isFavoritesExpanded = !isFavoritesExpanded }
+                    ) { favorite ->
+                        FavoriteItemCard(
+                            favorite = favorite,
+                            onRemove = { favoriteToRemove ->
+                                userProfileViewModel.removeFavorite(favoriteToRemove)
+                            }
+                        )
+                    }
                 }
             }
+        }
 
-            // Favorite Stops Section
-            item {
-                ExpandableSection(
-                    title = "Favorite Stops",
-                    items = favorites,
-                    isExpanded = isFavoritesExpanded,
-                    onExpandToggle = { isFavoritesExpanded = !isFavoritesExpanded }
-                ) { favorite ->
-                    FavoriteItemCard(
-                        favorite = favorite,
-                        onRemove = { favoriteToRemove ->
-                            userProfileViewModel.removeFavorite(favoriteToRemove)
-                        }
+        if (showModal && selectedPreference != null) {
+            NotificationDaysModal(
+                busName = selectedPreference!!.trip_short_name,
+                preference = selectedPreference!!,
+                onDismiss = {
+                    showModal = false
+                    selectedPreference = null
+                },
+                onSaveComplete = { days, today ->
+                    val updatedPreference = selectedPreference!!.copy(
+                        days = days,
+                        today = today
                     )
+                    preferencesViewModel.updatePreferences(updatedPreference)
+                    showModal = false
+                    selectedPreference = null
                 }
-            }
+            )
         }
     }
 }
@@ -273,8 +310,10 @@ fun TripHistoryCard(trip: String) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun NotificationCard(preference: Preference) {
+fun NotificationCard(preference: Preference, viewModel: PreferencesViewModel, onSettingsClick: () -> Unit) {
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -315,19 +354,26 @@ fun NotificationCard(preference: Preference) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
-                Text(
-                    text = "Today: ${preference.today}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
+                if (preference.today != "") {
+                    Text(
+                        text = "Today: ${preference.today}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             // Put a wrench icon at the end of the row
-            Icon(
-                painter = painterResource(id = R.drawable.settings),
-                contentDescription = "Settings",
-                tint = MaterialTheme.colorScheme.primary
-            )
+            IconButton(
+                onClick = { onSettingsClick() }, // Open the modal
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.settings),
+                    contentDescription = "Settings",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
