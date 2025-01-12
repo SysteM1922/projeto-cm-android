@@ -10,14 +10,17 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.example.cmprojectandroid.R
 import com.example.cmprojectandroid.screens.*
 import com.example.cmprojectandroid.viewmodels.MainViewModel
 import com.example.cmprojectandroid.viewmodels.MapViewModel
@@ -31,17 +34,16 @@ object NavRoutes {
     const val MapPage = "map?lat={lat}&lng={lng}&stopId={stopId}"
 }
 
-sealed class BottomNavItem(val route: String, val title: String, val icon: ImageVector) {
+sealed class BottomNavItem(val route: String, val title: String) {
 
     object Map : BottomNavItem(
         route = "map?lat={lat}&lng={lng}&stopId={stopId}",
-        title = "Map",
-        icon = Icons.Default.Star
+        title = "Map"
     )
 
-    object ScanQRCode : BottomNavItem("scan_qrcode", "Scan QR Code", Icons.Default.Star)
-    object NFCPage : BottomNavItem("nfc_page", "NFC Page", Icons.Default.Star)
-    object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
+    object ScanQRCode : BottomNavItem("scan_qrcode", "Scan QR Code")
+    object NFCPage : BottomNavItem("nfc_page", "NFC Page")
+    object Profile : BottomNavItem("profile", "Profile")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -189,8 +191,14 @@ fun BottomNavigationBar(navController: NavHostController) {
         val currentRoute = navBackStackEntry?.destination?.route
 
         items.forEach { item ->
+            val icon: Painter = when (item) {
+                BottomNavItem.Map -> painterResource(id = R.drawable.map)
+                BottomNavItem.ScanQRCode -> painterResource(id = R.drawable.qrcode_24)
+                BottomNavItem.NFCPage -> painterResource(id = R.drawable.nfc)
+                BottomNavItem.Profile -> painterResource(id = R.drawable.profile)
+            }
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title) },
+                icon = { Icon(painter = icon, contentDescription = item.title) },
                 label = { Text(item.title) },
                 selected = currentRoute?.startsWith(item.route) == true,
                 onClick = {

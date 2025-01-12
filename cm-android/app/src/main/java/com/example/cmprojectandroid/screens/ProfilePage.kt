@@ -16,12 +16,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cmprojectandroid.Model.Favorite
 import com.example.cmprojectandroid.Model.Preference
+import com.example.cmprojectandroid.R
 import com.example.cmprojectandroid.navigation.NavRoutes
 import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 import com.example.cmprojectandroid.viewmodels.TestDataViewModel
@@ -239,11 +241,11 @@ fun TripHistoryCard(trip: String) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.ThumbUp,
-                contentDescription = null,
+                painter = painterResource(id = R.drawable.bus),
+                contentDescription = "Bus Icon",
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(32.dp)
                     .padding(end = 12.dp)
             )
 
@@ -286,7 +288,7 @@ fun NotificationCard(preference: Preference) {
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
-                    .size(24.dp)
+                    .size(32.dp)
                     .padding(end = 12.dp)
             )
 
@@ -315,7 +317,7 @@ fun NotificationCard(preference: Preference) {
 
             // Put a wrench icon at the end of the row
             Icon(
-                imageVector = Icons.Default.ShoppingCart,
+                painter = painterResource(id = R.drawable.settings),
                 contentDescription = "Settings",
                 tint = MaterialTheme.colorScheme.primary
             )
