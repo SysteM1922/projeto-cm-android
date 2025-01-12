@@ -178,7 +178,6 @@ fun MapPage(
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
-            contentPadding = PaddingValues(top = 200.dp, bottom = 100.dp),
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             onMapLoaded = {
@@ -203,7 +202,7 @@ fun MapPage(
             uiSettings = MapUiSettings(
                 zoomControlsEnabled = false,
                 myLocationButtonEnabled = false,
-                compassEnabled = isMapLoaded,
+                compassEnabled = false,
                 indoorLevelPickerEnabled = isMapLoaded,
                 scrollGesturesEnabled = isMapLoaded,
                 zoomGesturesEnabled = isMapLoaded,
