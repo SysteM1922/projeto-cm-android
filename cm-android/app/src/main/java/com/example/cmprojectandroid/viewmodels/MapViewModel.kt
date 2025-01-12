@@ -22,14 +22,18 @@ class MapViewModel : ViewModel() {
     )
     val cameraPosition: State<CameraPosition> = _cameraPosition
 
-    private val _selectedLocation = MutableStateFlow<LatLng?>(null)
-    val selectedLocation: StateFlow<LatLng?> = _selectedLocation
-
     private val _isFavoritesSelected = mutableStateOf(false)
     val isFavoritesSelected: State<Boolean> = _isFavoritesSelected
 
+    private val _isBusesSelected = MutableStateFlow(true)   // initially buses are selected
+    val isBusesSelected: StateFlow<Boolean> = _isBusesSelected
+
     fun setFavoritesFilter(selected: Boolean) {
         _isFavoritesSelected.value = selected
+    }
+
+    fun setBusesFilter(selected: Boolean) {
+        _isBusesSelected.value = selected
     }
 
     fun setMapLoaded(loaded: Boolean) {
@@ -39,12 +43,6 @@ class MapViewModel : ViewModel() {
     fun updateCameraPosition(position: CameraPosition) {
         viewModelScope.launch {
             _cameraPosition.value = position
-        }
-    }
-
-    fun setSelectedLocation(location: LatLng) {
-        viewModelScope.launch {
-            _selectedLocation.value = location
         }
     }
 

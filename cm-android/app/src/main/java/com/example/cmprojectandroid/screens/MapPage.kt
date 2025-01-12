@@ -1,10 +1,15 @@
 package com.example.cmprojectandroid.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -44,10 +50,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
+import com.example.cmprojectandroid.viewmodels.LiveBusViewModel
 import com.example.cmprojectandroid.viewmodels.MapViewModel
 import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 
+import com.example.cmprojectandroid.Model.StopOrDriver
+import com.example.cmprojectandroid.R
+import com.google.android.gms.maps.model.BitmapDescriptor
 
+@SuppressLint("SimpleDateFormat")
 @Composable
 fun MapPage(
     navController: NavHostController,
@@ -56,7 +67,8 @@ fun MapPage(
     selectedStopIdInitially: String? = null,
     stopsViewModel: StopsViewModel = viewModel(),
     preferencesViewModel: PreferencesViewModel,
-    mapViewModel: MapViewModel
+    mapViewModel: MapViewModel,
+    liveBusViewModel: LiveBusViewModel = viewModel()
 ) {
 
     SideEffect {
@@ -100,17 +112,18 @@ fun MapPage(
     val stops by stopsViewModel.stops
     val favorites by stopsViewModel.favorites
 
-    // Track the selected stop for modal
-    var selectedStop by remember { mutableStateOf<Stop?>(null) }
-    val selectedStopId = selectedStop?.stop_id
+    // Track the selected item for modal
+    var selectedItem by remember { mutableStateOf<StopOrDriver?>(null) }
 
     // UI states for searching and filtering
     var searchQuery by remember { mutableStateOf("") }
 
     val isFavoritesSelected by mapViewModel.isFavoritesSelected
 
+    val isBusesSelected by mapViewModel.isBusesSelected.collectAsState()
+
     // Compute filtered list of stops
-    val filteredStops = remember(stops, favorites, searchQuery, isFavoritesSelected) {
+    val filteredStops = remember(stops, favorites, searchQuery, isFavoritesSelected, isBusesSelected) {
         var temp = stops.filter { stop ->
             stop.stop_name.contains(searchQuery, ignoreCase = true)
         }
@@ -122,7 +135,15 @@ fun MapPage(
         temp
     }
 
-    // Camera state from ViewModel
+    // Compute filtered list of drivers
+    val filteredDrivers = if (isBusesSelected) {
+        liveBusViewModel.drivers.collectAsState().value
+    } else {
+        emptyList()
+    }
+
+
+        // Camera state from ViewModel
     val cameraPositionState = rememberCameraPositionState {
         position = mapViewModel.cameraPosition.value
     }
@@ -152,7 +173,8 @@ fun MapPage(
                     ),
                     400 // or whatever duration
                 )
-                selectedStop = foundStop
+                // selectedStop = foundStop
+                selectedItem = StopOrDriver.Stop(foundStop.stop_id, foundStop.stop_name)
             }
         }
     }
@@ -175,6 +197,37 @@ fun MapPage(
             lng2 = null
         }
     }
+    // live buses
+    val drivers by liveBusViewModel.drivers.collectAsState()
+
+    fun Context.bitmapDescriptorFromVector(
+        @DrawableRes vectorResId: Int,
+        color: Color? = null // Can be passed as Color(red, green, blue)
+    ): BitmapDescriptor? {
+        return try {
+            val vectorDrawable = ContextCompat.getDrawable(this, vectorResId)
+            vectorDrawable?.let {
+                it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
+                // If color is provided, mutate and set the tint
+                if (color != null) {
+                    it.mutate()
+                    it.setTint(color.toArgb())
+                }
+                val bitmap = Bitmap.createBitmap(
+                    it.intrinsicWidth,
+                    it.intrinsicHeight,
+                    Bitmap.Config.ARGB_8888
+                )
+                val canvas = Canvas(bitmap)
+                it.draw(canvas)
+                BitmapDescriptorFactory.fromBitmap(bitmap)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
@@ -196,7 +249,7 @@ fun MapPage(
                                 600
                             )
                         }
-                        selectedStop = foundStop
+                        selectedItem = StopOrDriver.Stop(foundStop.stop_id, foundStop.stop_name)
                     }
                 }
             },
@@ -217,8 +270,8 @@ fun MapPage(
                 focusManager.clearFocus()
                 keyboardController?.hide()
                 searchQuery = ""
-                if (selectedStop != null) {
-                    selectedStop = null
+                if (selectedItem != null) {
+                    selectedItem = null
                 }
             },
             properties = MapProperties(
@@ -229,7 +282,10 @@ fun MapPage(
             // For each stop in the filtered list
             filteredStops.forEach { stop ->
                 val isFavorite = favorites.any { it.stop_id == stop.stop_id }
-                val isSelected = (stop.stop_id == selectedStopId)
+                val isSelected = when (selectedItem) {
+                    is StopOrDriver.Stop -> (selectedItem as StopOrDriver.Stop)?.stopId == stop.stop_id
+                    else -> false
+                }
                 Marker(
                     state = MarkerState(
                         position = LatLng(stop.stop_lat, stop.stop_lon)
@@ -244,7 +300,7 @@ fun MapPage(
                         }
                     ),
                     onClick = { marker ->
-                        selectedStop = stop
+                        selectedItem = StopOrDriver.Stop(stop.stop_id, stop.stop_name)
                         // Animate camera to the selected stop smoothly
                         CoroutineScope(Dispatchers.Main).launch {
                             cameraPositionState.animate(
@@ -258,6 +314,38 @@ fun MapPage(
                         // Return true to consume the click event and prevent default info window
                         true
                     },
+                )
+            }
+
+            // For each bus (driver) in the list
+            filteredDrivers.forEach { driver ->
+                val busColor = try {
+                    Color(android.graphics.Color.parseColor("#${driver.color}"))
+                } catch (e: Exception) {
+                    Log.e("MapPage", "Invalid color format: ${driver.color}. Using default color.")
+                    Color.Red // Default color if parsing fails
+                }
+                Marker(
+                    state = MarkerState(position = LatLng(driver.lat, driver.lng)),
+                    title = "Bus ${{driver.bus_name}} (${driver.bus_id})",
+                    icon = LocalContext.current.bitmapDescriptorFromVector(
+                        R.drawable.bus, busColor
+                    ),
+                    onClick = { marker ->
+                        selectedItem = StopOrDriver.Driver(driver.bus_id, driver.bus_name)
+                        // Optionally, animate camera to the driver or perform other actions
+                        CoroutineScope(Dispatchers.Main).launch {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(driver.lat, driver.lng),
+                                    15f // Adjust zoom as needed
+                                ),
+                                400 // Duration of camera animation in ms
+                            )
+                        }
+                        // Return true to consume the click event and prevent default info window
+                        true
+                    }
                 )
             }
         }
@@ -318,8 +406,12 @@ fun MapPage(
             // b. Filter Row (All | Favorites)
             FilterRow(
                 isFavoritesSelected = isFavoritesSelected,
-                onFilterChange = { selected ->
+                isBusesSelected = isBusesSelected,
+                onFavoritesChange = { selected ->
                     mapViewModel.setFavoritesFilter(selected)
+                },
+                onBusesChange = { selected ->
+                    mapViewModel.setBusesFilter(selected)
                 }
             )
 
@@ -339,7 +431,7 @@ fun MapPage(
                     ) {
                         items(filteredStops) { stop ->
                             SearchResultItem(stop = stop, onItemClick = {
-                                selectedStop = it
+                                selectedItem = StopOrDriver.Stop(it.stop_id, it.stop_name)
                                 // Animate camera to the selected stop smoothly
                                 CoroutineScope(Dispatchers.Main).launch {
                                     cameraPositionState.animate(
@@ -361,72 +453,93 @@ fun MapPage(
             }
         }
 
-        // 3. Bottom Modal if a Stop is Selected
-        selectedStop?.let { stop ->
-            BottomModal(
-                stop = stop,
-                isFavorite = favorites.any { it.stop_id == stop.stop_id },
-                onDismiss = { selectedStop = null },
-                navController = navController,
-                onFavoriteClick = {
-                    stopsViewModel.toggleFavorite(it)
-                },
-                preferencesViewModel = preferencesViewModel
-            )
+        selectedItem?.let { item ->
+            when (item) {
+                is StopOrDriver.Stop -> {
+                    BottomModal(
+                        data = item,
+                        isFavorite = favorites.any { it.stop_id == item.stopId },
+                        onDismiss = { selectedItem = null },
+                        navController = navController,
+                        onFavoriteClick = {
+                            stopsViewModel.toggleFavorite(Stop(it.stopId, it.stopName))
+                        },
+                        preferencesViewModel = preferencesViewModel
+                    )
+                }
+                is StopOrDriver.Driver -> {
+                    BottomModal(
+                        data = item,
+                        isFavorite = favorites.any { it.stop_id == item.driverId },
+                        onDismiss = { selectedItem = null },
+                        navController = navController,
+                        onFavoriteClick = { /* Nothing happens*/ },
+                        preferencesViewModel = preferencesViewModel
+                    )
+                }
+            }
         }
 
         // 4. Debug Text Overlay (Optional)
-        // Column(
-        //     modifier = Modifier
-        //         .align(Alignment.TopStart)
-        //         .padding(8.dp)
-        // ) {
-        //     // Existing line
-        //     Text(
-        //         text = "Real-time message: $message",
-        //         style = MaterialTheme.typography.bodySmall,
-        //         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        //     )
-        //     Text(
-        //         text = "VM Hash: ${mapViewModel.hashCode()}",
-        //         style = MaterialTheme.typography.bodySmall
-        //     )
-        //     Text(
-        //         text = "Map Loaded: ${mapViewModel.isMapLoaded.value}",
-        //         style = MaterialTheme.typography.bodySmall
-        //     )
-        //     Text(
-        //         text = "Lat: $latitude, Lng: $longitude",
-        //         style = MaterialTheme.typography.bodySmall
-        //     )
-        // }
+//         Column(
+//             modifier = Modifier
+//                 .align(Alignment.TopStart)
+//                 .padding(8.dp)
+//         ) {
+//             // Existing line
+//             Text(
+//                 text = "drivers: $drivers",
+//                 style = MaterialTheme.typography.bodySmall,
+//                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+//             )
+//
+//         }
     }
 }
 
 @Composable
 fun FilterRow(
     isFavoritesSelected: Boolean,
-    onFilterChange: (Boolean) -> Unit
+    isBusesSelected: Boolean,
+    onFavoritesChange: (Boolean) -> Unit,
+    onBusesChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        FilterRadioButton(
-            text = "All",
-            selected = !isFavoritesSelected,
-            onClick = { onFilterChange(false) }
-        )
+        // Favorites Checkbox
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clickable { onFavoritesChange(!isFavoritesSelected) }
+        ) {
+            Checkbox(
+                checked = isFavoritesSelected,
+                onCheckedChange = onFavoritesChange
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "Favorites")
+        }
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        FilterRadioButton(
-            text = "Favorites",
-            selected = isFavoritesSelected,
-            onClick = { onFilterChange(true) }
-        )
+        // Buses Checkbox
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clickable { onBusesChange(!isBusesSelected) }
+        ) {
+            Checkbox(
+                checked = isBusesSelected,
+                onCheckedChange = onBusesChange
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(text = "Buses")
+        }
     }
 }
 

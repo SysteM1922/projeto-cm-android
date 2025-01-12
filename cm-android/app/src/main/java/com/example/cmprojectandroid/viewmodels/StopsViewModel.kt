@@ -123,7 +123,4 @@ class StopsViewModel : ViewModel() {
         }
     }
 
-    fun isStopFavorite(stopId: String): Boolean {
-        return _favorites.value.any { it.stop_id == stopId }
-    }
 }

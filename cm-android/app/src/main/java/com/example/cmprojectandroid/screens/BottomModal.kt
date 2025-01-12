@@ -13,18 +13,21 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.cmprojectandroid.Model.Stop
+import com.example.cmprojectandroid.Model.Driver
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.example.cmprojectandroid.Model.StopOrDriver
 import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
+
 
 @Composable
 fun BottomModal(
-    stop: Stop,
+    data: StopOrDriver,
     isFavorite: Boolean, // Receive favorite status as a parameter
     onDismiss: () -> Unit,
     navController: NavHostController,
-    onFavoriteClick: (Stop) -> Unit = {},
+    onFavoriteClick: (StopOrDriver.Stop) -> Unit = {},
     preferencesViewModel: PreferencesViewModel
 ) {
     Box(
@@ -52,24 +55,28 @@ fun BottomModal(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val name = when (data) {
+                        is StopOrDriver.Stop -> data.stopName
+                        is StopOrDriver.Driver -> data.driverName
+                    }
                     Text(
-                        text = stop.stop_name,
+                        text = name,
                         style = MaterialTheme.typography.headlineMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
 
-                    IconButton(
-                        onClick = {
-                            onFavoriteClick(stop)
+                    if (data is StopOrDriver.Stop) { // Check if it's a Stop
+                        IconButton(
+                            onClick = { onFavoriteClick(data) }, // Now safe to cast
+                        ) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                                tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
+                            )
                         }
-                    ) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                            tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
-                        )
                     }
                 }
 
@@ -88,19 +95,20 @@ fun BottomModal(
                     }
 
                     Button(
+                        // navController.navigate("stop_page/${Uri.encode(stop.stop_name)}/${stop.stop_id}"
                         onClick = {
-                            // Navigate to StopPage with the stop name
-                            navController.navigate("stop_page/${Uri.encode(stop.stop_name)}/${stop.stop_id}"
-                            ) {
+                            val route = when (data) {
+                                is StopOrDriver.Stop -> "stop_page/${Uri.encode(data.stopName)}/${data.stopId}"
+                                is StopOrDriver.Driver -> "bus_details/${Uri.encode(data.driverId)}/${data.driverName}"
+                            }
+                            navController.navigate(route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
-                                // Avoid multiple copies of the same destination
                                 launchSingleTop = true
-                                // Restore state when reselecting a previously selected item
                                 restoreState = true
                             }
-                            onDismiss() // Optionally dismiss the modal
+                            onDismiss()
                         },
                         modifier = Modifier.weight(1f)
                     ) {
