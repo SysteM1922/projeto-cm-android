@@ -79,8 +79,7 @@ dependencies {
     implementation(libs.firebase.database.ktx)
     implementation(libs.google.firebase.firestore.ktx)
     implementation(libs.google.firebase.auth.ktx)
-
-    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation(libs.barcode.scanning)
 
     // camera X
     val camerax_version = "1.5.0-alpha03"
@@ -97,6 +96,9 @@ dependencies {
     implementation(libs.maps.compose.utils)
     // Google Maps Compose widgets library
     implementation(libs.maps.compose.widgets)
+
+    // Firebase Messaging
+    implementation(libs.firebase.messaging.ktx)
 }
 
 secrets {

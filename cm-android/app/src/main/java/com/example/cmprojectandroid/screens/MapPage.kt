@@ -22,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -44,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
 import com.example.cmprojectandroid.viewmodels.MapViewModel
+import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 
 
 @Composable
@@ -53,6 +55,7 @@ fun MapPage(
     longitude: Double? = null,
     selectedStopIdInitially: String? = null,
     stopsViewModel: StopsViewModel = viewModel(),
+    preferencesViewModel: PreferencesViewModel,
     mapViewModel: MapViewModel
 ) {
 
@@ -214,6 +217,9 @@ fun MapPage(
                 focusManager.clearFocus()
                 keyboardController?.hide()
                 searchQuery = ""
+                if (selectedStop != null) {
+                    selectedStop = null
+                }
             },
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission && isMapLoaded,
@@ -233,6 +239,7 @@ fun MapPage(
                     icon = BitmapDescriptorFactory.defaultMarker(
                         when {
                             isSelected -> BitmapDescriptorFactory.HUE_GREEN
+                            isFavorite -> BitmapDescriptorFactory.HUE_ORANGE
                             else -> BitmapDescriptorFactory.HUE_RED
                         }
                     ),
@@ -271,11 +278,11 @@ fun MapPage(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp) // Adjust padding as needed
-                .background(Color.White.copy(alpha = 0.8f)) // Semi-transparent background
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
                 .padding(8.dp) // Inner padding for the column
                 .align(Alignment.TopCenter),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             OutlinedTextField(
                 value = searchQuery,
@@ -363,7 +370,8 @@ fun MapPage(
                 navController = navController,
                 onFavoriteClick = {
                     stopsViewModel.toggleFavorite(it)
-                }
+                },
+                preferencesViewModel = preferencesViewModel
             )
         }
 

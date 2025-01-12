@@ -2,13 +2,14 @@ package com.example.cmprojectandroid.screens
 
 // THIS IS THE PAGE FOR EACH BUS, COMING FROM THE STOP PAGE
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,16 +20,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.cmprojectandroid.Model.Bus
+import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 import com.example.cmprojectandroid.viewmodels.StopViewModel
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StopPage(
     stopName: String,
     stopId: String,
     navController: NavHostController,
-    viewModel: StopViewModel = viewModel()
+    viewModel: StopViewModel = viewModel(),
+    preferencesViewModel: PreferencesViewModel
 ) {
     // Observe the list of buses from the ViewModel
     val buses by viewModel.buses.collectAsState()
@@ -80,19 +84,24 @@ fun StopPage(
                 }
             }
             if (showModal && selectedBus != null) {
-                NotificationDaysModal(
-                    busName = selectedBus!!.busName,
-                    busId = selectedBus!!.busId,
-                    onDismiss = {
-                        // Logic to dismiss the modal
-                        showModal = false
-                    },
-                    onSaveComplete = {
-                        // Logic to handle after saving is complete
-                        showModal = false
-                        // Additional logic if necessary
-                    }
-                )
+                preferencesViewModel.getPreference(selectedBus!!.busId, stopId)?.let {
+                    NotificationDaysModal(
+                        busName = selectedBus!!.busName,
+                        preference = it,
+                        onDismiss = {
+                            // Logic to dismiss the modal
+                            showModal = false
+                        },
+                        onSaveComplete = { days: List<String>, today: String ->
+                            // Logic to handle after saving is complete
+                            showModal = false
+                            // Additional logic if necessary
+                            it.days = days
+                            it.today = today
+                            preferencesViewModel.updatePreferences(it)
+                        }
+                    )
+                }
             }
 
         }

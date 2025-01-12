@@ -1,5 +1,7 @@
 package com.example.cmprojectandroid.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -13,24 +15,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.example.cmprojectandroid.Model.Preference
+import com.google.firebase.auth.FirebaseAuth
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
-data class NotificationPreference(
-    val busId: String,
-    val busName: String,
-    val selectedDays: Set<String>,
-    val userId: String
-)
-
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NotificationDaysModal(
     busName: String,
-    busId: String,
+    preference: Preference,
     onDismiss: () -> Unit,
-    onSaveComplete: () -> Unit
+    onSaveComplete: (days: List<String>, today: String) -> Unit
 ) {
     val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    var selectedDays by remember { mutableStateOf(setOf<String>()) }
-    var isJustToday by remember { mutableStateOf(false) }
+    var selectedDays by remember { mutableStateOf(preference.days) }
+
+    val current = getTodayDate()
+
+    var today by remember { mutableStateOf(preference.today == current) }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -67,9 +70,6 @@ fun NotificationDaysModal(
                         val isSelected = selectedDays.contains(day)
                         OutlinedButton(
                             onClick = {
-                                if (isJustToday) {
-                                    isJustToday = false
-                                }
                                 selectedDays = if (isSelected) {
                                     selectedDays - day
                                 } else {
@@ -107,40 +107,15 @@ fun NotificationDaysModal(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            if (isJustToday) {
-                                isJustToday = false
-                                selectedDays = emptySet()
-                            } else {
-                                isJustToday = true
-                                selectedDays = setOf("Today")
-                            }
+                    Checkbox(
+                        checked = today,
+                        onCheckedChange = {
+                            today = it
                         },
-                        modifier = Modifier
-                            .width(44.dp)
-                            .height(44.dp),
-                        contentPadding = PaddingValues(0.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = if (isJustToday) MaterialTheme.colorScheme.primary else Color.White,
-                            contentColor = if (isJustToday) Color.White else MaterialTheme.colorScheme.primary
-                        ),
-                        border = BorderStroke(
-                            1.dp,
-                            if (isJustToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-                        )
-                    ) {
-                        Text(
-                            text = "T",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Just Today",
+                        text = "Today",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
                     )
@@ -161,8 +136,7 @@ fun NotificationDaysModal(
                     }
                     Button(
                         onClick = {
-                            saveNotificationPreference()
-                            onSaveComplete()
+                            onSaveComplete(selectedDays, if (today) current else "")
                             onDismiss()
                         },
                         modifier = Modifier.weight(1f)
@@ -175,7 +149,8 @@ fun NotificationDaysModal(
     }
 }
 
-private fun saveNotificationPreference() {
-    // Save notification preference to Firestore
-    // ...
+@RequiresApi(Build.VERSION_CODES.O)
+private fun getTodayDate(): String {
+    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+    return LocalDateTime.now().format(formatter)
 }

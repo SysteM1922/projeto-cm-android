@@ -56,7 +56,7 @@ class StopsViewModel : ViewModel() {
             .document(user.uid)
             .get()
             .addOnSuccessListener { document ->
-                val favoritesList = document.get("favorites") as? List<Map<String, Any>> ?: listOf()
+                val favoritesList = document.get("favorite_stops") as? List<Map<String, Any>> ?: listOf()
                 val favorites = favoritesList.map { map ->
                     Favorite(
                         stop_id = map["id"] as? String ?: "",
@@ -83,7 +83,7 @@ class StopsViewModel : ViewModel() {
 
                 // Fetch current favorites
                 val document = userRef.get().await()
-                val favoritesList = document.get("favorites") as? List<Map<String, Any>> ?: listOf()
+                val favoritesList = document.get("favorite_stops") as? List<Map<String, Any>> ?: listOf()
                 val currentFavorites = favoritesList.map { map ->
                     Favorite(
                         stop_id = map["id"] as? String ?: "",
@@ -97,7 +97,7 @@ class StopsViewModel : ViewModel() {
                     // Remove from favorites
                     currentFavorites.remove(existingFavorite)
                     userRef.set(
-                        mapOf("favorites" to currentFavorites.map { mapOf("id" to it.stop_id, "name" to it.stop_name) }),
+                        mapOf("favorite_stops" to currentFavorites.map { mapOf("id" to it.stop_id, "name" to it.stop_name) }),
                         SetOptions.merge()
                     )
                         .addOnSuccessListener {
@@ -109,7 +109,7 @@ class StopsViewModel : ViewModel() {
                     val newFavorite = Favorite(stop_id = stop.stop_id, stop_name = stop.stop_name)
                     currentFavorites.add(newFavorite)
                     userRef.set(
-                        mapOf("favorites" to currentFavorites.map { mapOf("id" to it.stop_id, "name" to it.stop_name) }),
+                        mapOf("favorite_stops" to currentFavorites.map { mapOf("id" to it.stop_id, "name" to it.stop_name) }),
                         SetOptions.merge()
                     )
                         .addOnSuccessListener {

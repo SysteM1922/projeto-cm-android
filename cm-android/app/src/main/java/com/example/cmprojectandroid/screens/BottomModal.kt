@@ -14,7 +14,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.cmprojectandroid.Model.Stop
 import android.net.Uri
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 
 @Composable
 fun BottomModal(
@@ -22,17 +24,13 @@ fun BottomModal(
     isFavorite: Boolean, // Receive favorite status as a parameter
     onDismiss: () -> Unit,
     navController: NavHostController,
-    onFavoriteClick: (Stop) -> Unit = {}
+    onFavoriteClick: (Stop) -> Unit = {},
+    preferencesViewModel: PreferencesViewModel
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
         // Semi-transparent scrim
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
-        ) {}
-
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -70,7 +68,7 @@ fun BottomModal(
                         Icon(
                             imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                             contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                            tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            tint = if (isFavorite) Color.Red else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -92,7 +90,8 @@ fun BottomModal(
                     Button(
                         onClick = {
                             // Navigate to StopPage with the stop name
-                            navController.navigate("stop_page/${Uri.encode(stop.stop_name)}/${stop.stop_id}") {
+                            navController.navigate("stop_page/${Uri.encode(stop.stop_name)}/${stop.stop_id}"
+                            ) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
                                 }

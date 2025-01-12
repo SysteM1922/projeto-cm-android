@@ -30,7 +30,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun ProfilePage(
-    navController: NavController,
+    onLogout: () -> Unit,
     userProfileViewModel: UserProfileViewModel = viewModel()
 ) {
     val auth = FirebaseAuth.getInstance()
@@ -104,9 +104,7 @@ fun ProfilePage(
             Button(
                 onClick = {
                     auth.signOut()
-                    navController.navigate(NavRoutes.Login) {
-                        popUpTo(0)
-                    }
+                    onLogout()
                 }
             ) {
                 Text("Logout")

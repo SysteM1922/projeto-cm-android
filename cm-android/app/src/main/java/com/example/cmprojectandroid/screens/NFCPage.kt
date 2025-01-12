@@ -33,6 +33,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.example.cmprojectandroid.R
+import com.example.cmprojectandroid.navigation.BottomNavItem
 
 import com.example.cmprojectandroid.services.HCEService
 import kotlinx.coroutines.delay
@@ -104,7 +105,9 @@ fun NFCPage(context: Context) {
                     TextButton(
                         onClick = {
                             showModal = false
-                            navController.navigate("map")
+                            navController.navigate(BottomNavItem.Map.route) {
+                                popUpTo(0)
+                            }
                         }
                     ) {
                         Text("Cancel")

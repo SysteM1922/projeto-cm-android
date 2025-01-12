@@ -1,6 +1,8 @@
 package com.example.cmprojectandroid.navigation
 
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
@@ -19,6 +21,7 @@ import androidx.navigation.navArgument
 import com.example.cmprojectandroid.screens.*
 import com.example.cmprojectandroid.viewmodels.MainViewModel
 import com.example.cmprojectandroid.viewmodels.MapViewModel
+import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 
 
 object NavRoutes {
@@ -35,14 +38,17 @@ sealed class BottomNavItem(val route: String, val title: String, val icon: Image
         title = "Map",
         icon = Icons.Default.Star
     )
+
     object ScanQRCode : BottomNavItem("scan_qrcode", "Scan QR Code", Icons.Default.Star)
     object NFCPage : BottomNavItem("nfc_page", "NFC Page", Icons.Default.Star)
     object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifier) {
     val mainViewModel = remember { MainViewModel() }
+    val preferencesViewModel = viewModel<PreferencesViewModel>()
     NavHost(
         navController,
         startDestination = NavRoutes.Login,
@@ -60,6 +66,7 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
                         // Clear back stack so user can't navigate back to Login
                         popUpTo(NavRoutes.Login) { inclusive = true }
                     }
+                    preferencesViewModel.subscribeAllTopics()
                 }
             )
         }
@@ -97,14 +104,15 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
             // Now retrieving them from the arguments is fine
             val latString = backStackEntry.arguments?.getString("lat") ?: "40.643771"
             val lngString = backStackEntry.arguments?.getString("lng") ?: "-8.640994"
-            val stopId    = backStackEntry.arguments?.getString("stopId") ?: ""
+            val stopId = backStackEntry.arguments?.getString("stopId") ?: ""
 
             MapPage(
                 navController = navController,
                 latitude = latString.toDoubleOrNull(),
                 longitude = lngString.toDoubleOrNull(),
                 selectedStopIdInitially = stopId,
-                mapViewModel = mainViewModel.mapViewModel
+                mapViewModel = mainViewModel.mapViewModel,
+                preferencesViewModel = preferencesViewModel
             )
         }
 
@@ -121,7 +129,12 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
         }
 
         composable(BottomNavItem.Profile.route) {
-            ProfilePage(navController)
+            ProfilePage(onLogout = {
+                preferencesViewModel.unsubscribeAllTopics()
+                navController.navigate(NavRoutes.Login) {
+                    popUpTo(0)
+                }
+            })
         }
 
         composable(
@@ -131,12 +144,14 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
                 navArgument("stopId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val stopName = backStackEntry.arguments?.getString("stopName")?.let { Uri.decode(it) } ?: "Unknown Stop"
+            val stopName = backStackEntry.arguments?.getString("stopName")?.let { Uri.decode(it) }
+                ?: "Unknown Stop"
             val stopId = backStackEntry.arguments?.getString("stopId") ?: "Unknown Stop ID"
             StopPage(
                 stopName = stopName,
                 stopId = stopId,
-                navController = navController
+                navController = navController,
+                preferencesViewModel = preferencesViewModel
             )
         }
 
@@ -149,7 +164,8 @@ fun NavigationHost(navController: NavHostController, modifier: Modifier = Modifi
             )
         ) { backStackEntry ->
             val busId = backStackEntry.arguments?.getString("busId") ?: "Unknown Bus ID"
-            val busName = backStackEntry.arguments?.getString("busName")?.let { Uri.decode(it) } ?: "Unknown Bus Name"
+            val busName = backStackEntry.arguments?.getString("busName")?.let { Uri.decode(it) }
+                ?: "Unknown Bus Name"
 
             BusDetailsPage(
                 busId = busId,
