@@ -1,6 +1,5 @@
 package com.example.driverapp.repositories
 
-import com.example.driverapp.Model.InitRealTimeLocation
 import com.example.driverapp.Model.RealtimeLocation
 import com.google.firebase.database.*
 
@@ -15,8 +14,7 @@ class LocationRepo {
         databaseRef.setValue(newLocation)
     }
 
-    fun initLocation(initRealTimeLocation: InitRealTimeLocation) {
-        databaseRef.setValue(initRealTimeLocation)
+    fun deleteTrip() {
+        databaseRef.removeValue()
     }
-
 }

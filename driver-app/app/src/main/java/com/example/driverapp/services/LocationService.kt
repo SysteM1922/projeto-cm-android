@@ -10,7 +10,6 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.example.driverapp.Model.InitRealTimeLocation
 import com.example.driverapp.Model.RealtimeLocation
 import com.example.driverapp.repositories.LocationRepo
 import com.google.android.gms.location.LocationServices
@@ -62,21 +61,19 @@ class LocationService : Service() {
         scope.launch {
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this@LocationService)
 
-            val initRealTimeLocation = InitRealTimeLocation(
+            var newLocation = RealtimeLocation(
                 bus_id = "LAWRA-123",
                 bus_name = "Bus Nig",
                 bus_color = "Blue"
             )
-            locationRepo.initLocation(initRealTimeLocation)
+            locationRepo.updateLocation(newLocation)
 
             while (true) {
                 try {
                     val location: Location? = fusedLocationClient.lastLocation.await()
                     location?.let {
-                        val newLocation = RealtimeLocation(
-                            lat = it.latitude,
-                            lng = it.longitude
-                        )
+                        newLocation.lat = it.latitude
+                        newLocation.lng = it.longitude
                         locationRepo.updateLocation(newLocation)
                         Log.d("LocationUpdateService", "Location updated: $newLocation")
                     }
@@ -110,6 +107,7 @@ class LocationService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        locationRepo.deleteTrip()
         scope.cancel()
     }
 }

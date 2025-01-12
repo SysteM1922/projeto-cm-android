@@ -1,12 +1,9 @@
 package com.example.driverapp.Model
 
 data class RealtimeLocation(
-    var lat: Double = 0.0,
-    var lng: Double = 0.0,
-)
-
-data class InitRealTimeLocation(
-    var bus_id: String = "",
-    var bus_name: String = "",
-    var bus_color: String = "",
+    var bus_id: String,
+    var lat: Double? = null,
+    var lng: Double? = null,
+    var bus_name: String,
+    var bus_color: String,
 )
