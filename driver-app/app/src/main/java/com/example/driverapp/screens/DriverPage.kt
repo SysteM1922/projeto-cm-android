@@ -1,11 +1,11 @@
 package com.example.driverapp.screens
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
+import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ExitToApp
 import androidx.compose.material3.*
@@ -15,101 +15,58 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.delay
-import com.google.android.gms.location.LocationServices
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.example.driverapp.viewmodels.LocationViewModel
-import kotlinx.coroutines.tasks.await
+import androidx.annotation.RequiresApi
+import com.example.driverapp.services.LocationService
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun DriverPage(
     onLogout: () -> Unit,
-    locationViewModel: LocationViewModel = viewModel()
 ) {
     val firestore = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
     val driver_id = auth.currentUser?.uid
     val display_name = auth.currentUser?.displayName
-    var hasShift = true
-    var shiftCompleted = false
     var trips = emptyList<String>()
     var actualTrip = ""
     var lastStop = ""
 
     val context = LocalContext.current
-    var hasLocationPermission by remember { mutableStateOf(false) }
+    var hasBackgroundServicePermission by remember { mutableStateOf(false) }
     var currentLat by remember { mutableStateOf<Double?>(null) }
     var currentLng by remember { mutableStateOf<Double?>(null) }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        hasLocationPermission = isGranted
+    ) { isGranted ->
         if (isGranted) {
-            Log.d("DriverPage", "Location permission GRANTED from user action.")
+            hasBackgroundServicePermission = true
+            Log.d("DriverPage", "Foreground service permission granted.")
         } else {
-            Log.d("DriverPage", "Location permission NOT granted from user action.")
+            hasBackgroundServicePermission = false
+            Log.d("DriverPage", "Foreground service permission denied.")
         }
     }
 
     LaunchedEffect(Unit) {
-        val currentStatus = ContextCompat.checkSelfPermission(
+        val currentForegroundServiceStatus = ContextCompat.checkSelfPermission(
             context,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
         )
-        if (currentStatus == PackageManager.PERMISSION_GRANTED) {
+        if (currentForegroundServiceStatus == PackageManager.PERMISSION_GRANTED) {
             // Permission already granted
-            hasLocationPermission = true
-            Log.d("DriverPage", "Location permission is already granted.")
+            hasBackgroundServicePermission = true
+            Log.d("DriverPage", "Foreground service permission is already granted.")
         } else {
             // Permission not granted, request it
-            Log.d("DriverPage", "Requesting location permission...")
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            Log.d("DriverPage", "Requesting foreground service permission...")
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         }
-    }
-
-    // Start location updates if we have the permission
-    if (hasLocationPermission) {
-        LaunchedEffect(Unit) {
-            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-            while (true) {
-                try {
-                    // Attempt to get the last known location
-                    val location: Location? = fusedLocationClient.lastLocation.await()
-
-                    location?.let {
-                        val lat = it.latitude
-                        val lng = it.longitude
-                        currentLat = lat
-                        currentLng = lng
-
-                        Log.d("DriverPage", "Current location: lat=$lat, lng=$lng")
-
-                        // Update Firestore
-                        locationViewModel.updateLocation(lat, lng)
-                    }
-                } catch (e: SecurityException) {
-                    // If for some reason location is revoked in the meantime
-                    e.printStackTrace()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                delay(2000) // Wait 2 seconds before next update
-            }
-        }
-    }
-
-    LaunchedEffect(driver_id) {
-        // check if there is any shift assigned to the driver
-        Log.d("DriverPage", "display_name: $display_name")
-        val shift = firestore.collection("shifts")
-            .whereEqualTo("driver_id", driver_id)
-            .get()
     }
 
     Column(
@@ -139,44 +96,48 @@ fun DriverPage(
         currentLat?.let { lat ->
             currentLng?.let { lng ->
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Location: lat=$lat, lng=$lng", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = "Location: lat=$lat, lng=$lng",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (!hasLocationPermission) {
-            Text("You need to accept the location permission for this service.")
+        if (!hasBackgroundServicePermission) {
+            Text("You need to accept the foreground service permission for this service.")
             Spacer(modifier = Modifier.height(8.dp))
-
             Button(
                 onClick = {
                     // Attempt to request again
-                    requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    Log.d("DriverPage", "Requesting foreground service permission...")
+                    // open app location settings
+                    val intent = Intent()
+                    intent.action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                    intent.data = android.net.Uri.parse("package:" + context.packageName)
+                    context.startActivity(intent)
                 }
             ) {
-                Text("Enable Location")
+                Text("Enable Background Service")
             }
-
         } else {
-            // If permission is granted, show shift information
-            when {
-                !hasShift -> {
-                    Text("No shift assigned")
+            Button(onClick = {
+                // Start the location service
+                val serviceIntent = Intent(context, LocationService::class.java).apply {
+                    action = LocationService.ACTION_START
                 }
-                shiftCompleted -> {
-                    Text("Shift completed")
+                context.startService(serviceIntent)
+            }) {
+                Text("Start next trip")
+            }
+            Button(onClick = {
+                // Stop the location service
+                val serviceIntent = Intent(context, LocationService::class.java).apply {
+                    action = LocationService.ACTION_STOP
                 }
-                else -> {
-                    if (actualTrip.isNotEmpty()) {
-                        Button(onClick = { /* Navigate to trip details */ }) {
-                            Text("Resume trip on $lastStop")
-                        }
-                    } else {
-                        Button(onClick = { /* Navigate to trip details */ }) {
-                            Text("Start next trip")
-                        }
-                    }
-                }
+                context.startService(serviceIntent)
+            }) {
+                Text("Stop trip")
             }
         }
     }

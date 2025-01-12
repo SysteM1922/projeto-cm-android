@@ -1,6 +1,7 @@
 package com.example.driverapp
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import android.nfc.FormatException
 import android.nfc.NdefMessage
@@ -21,10 +22,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.driverapp.navigation.NavRoutes
 import com.example.driverapp.navigation.NavigationHost
+import com.example.driverapp.services.LocationService
 import com.example.driverapp.ui.theme.DriverAppTheme
 import com.example.driverapp.viewmodels.NFCViewModel
 import com.google.firebase.auth.FirebaseAuth
