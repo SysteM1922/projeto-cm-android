@@ -9,6 +9,7 @@ import android.nfc.NdefRecord
 import android.nfc.cardemulation.HostApduService
 import android.os.Bundle
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
 import java.io.*
 import java.math.BigInteger
 
@@ -311,10 +312,18 @@ class HCEService : HostApduService() {
     companion object {
         private val READ_BLOCK_SIZE: Int = 100
         private val TAG = "HCEService"
+
+        val auth = FirebaseAuth.getInstance()
+
         @SuppressLint("LongLogTag")
         @JvmStatic
         fun readNdefMessageFromFile(context: Context): String? {
-            var ndefMessage: String? = "Hello world"
+            var ndefMessage: String? = null
+            if (auth.currentUser == null) {
+                ndefMessage = "0000000000000000"
+            } else {
+                ndefMessage = auth.currentUser!!.uid
+            }
 
             try {
                 val fileIn: FileInputStream = context.openFileInput("NdefMessage.txt")
