@@ -21,7 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cmprojectandroid.Model.Favorite
+import com.example.cmprojectandroid.Model.Preference
 import com.example.cmprojectandroid.navigation.NavRoutes
+import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 import com.example.cmprojectandroid.viewmodels.TestDataViewModel
 import com.example.cmprojectandroid.viewmodels.UserProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -31,10 +33,13 @@ import kotlinx.coroutines.delay
 @Composable
 fun ProfilePage(
     onLogout: () -> Unit,
-    userProfileViewModel: UserProfileViewModel = viewModel()
+    userProfileViewModel: UserProfileViewModel = viewModel(),
+    preferencesViewModel: PreferencesViewModel = viewModel()
 ) {
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
+
+    val preferences by preferencesViewModel.preferences.collectAsState()
 
     val testDataViewModel: TestDataViewModel = viewModel()
 
@@ -46,13 +51,6 @@ fun ProfilePage(
             "Bus A (10:00 AM, Jan 10)",
             "Bus B (2:30 PM, Jan 9)",
             "Bus C (8:15 AM, Jan 8)"
-        )
-    }
-    val activeNotifications = remember {
-        mutableStateListOf(
-            "Bus A, Stop 1 (Mon, Wed, Fri)",
-            "Bus B, Stop 3 (Tue, Thu)",
-            "Bus C, Stop 5 (Weekends)"
         )
     }
 
@@ -134,11 +132,11 @@ fun ProfilePage(
             item {
                 ExpandableSection(
                     title = "Active Notifications",
-                    items = activeNotifications,
+                    items = preferences.values.toList(),
                     isExpanded = isNotificationsExpanded,
                     onExpandToggle = { isNotificationsExpanded = !isNotificationsExpanded }
-                ) { notification ->
-                    NotificationCard(notification)
+                ) { preference ->
+                    NotificationCard(preference)
                 }
             }
 
@@ -267,7 +265,7 @@ fun TripHistoryCard(trip: String) {
 }
 
 @Composable
-fun NotificationCard(notification: String) {
+fun NotificationCard(preference: Preference) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -293,14 +291,23 @@ fun NotificationCard(notification: String) {
             )
 
             Column(modifier = Modifier.weight(1f)) {
-                val parts = notification.split(", ")
                 Text(
-                    text = "${parts[0]}, ${parts[1].split(" (")[0]}",
+                    text = "Trip Name: ${preference.trip_short_name}",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = parts[1].split(" (")[1].removeSuffix(")"),
+                    text = "Stop Name: ${preference.stop_name}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Days: ${preference.days.joinToString()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Today: ${preference.today}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )

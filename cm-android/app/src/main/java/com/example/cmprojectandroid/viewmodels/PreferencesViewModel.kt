@@ -1,19 +1,31 @@
 package com.example.cmprojectandroid.viewmodels
 
 import android.util.Log
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.cmprojectandroid.Model.Preference
+import com.example.cmprojectandroid.Model.Stop
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class PreferencesViewModel : ViewModel() {
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    private val _preferences = mutableStateOf<Map<String, Preference>>(emptyMap())
+    private val stops = mutableMapOf<String, Stop>()
+    private val trips = mutableMapOf<String, String>()
+
+    private val _preferences = MutableStateFlow<Map<String, Preference>>(emptyMap())
+    val preferences: StateFlow<Map<String, Preference>> = _preferences
 
     init {
         fetchPreferences()
@@ -22,22 +34,78 @@ class PreferencesViewModel : ViewModel() {
     private fun fetchPreferences() {
         val user = auth.currentUser ?: return
 
-        firestore.collection("users")
-            .document(user.uid)
-            .get()
-            .addOnSuccessListener { document ->
-                val preferencesList =
-                    document.get("preferences") as? List<Map<String, Any>> ?: listOf()
-                val preferences = preferencesList.map { map ->
-                    Preference(
-                        trip_id = map["trip_id"] as? String ?: "",
-                        stop_id = map["stop_id"] as? String ?: "",
-                        days = map["days"] as? List<String> ?: emptyList(),
-                        today = map["today"] as? String ?: ""
-                    )
-                }.associateBy { it.trip_id + "/" + it.stop_id }
-                _preferences.value = preferences
+        viewModelScope.launch {
+            try {
+                firestore.collection("users")
+                    .document(user.uid)
+                    .get()
+                    .addOnSuccessListener { document ->
+
+                        val preferencesList = document.get("preferences") as? List<Map<String, Any>> ?: emptyList()
+
+                        val fetchedPreferences = preferencesList.map { map ->
+                            Preference(
+                                trip_id = map["trip_id"] as? String ?: "",
+                                stop_id = map["stop_id"] as? String ?: "",
+                                days = map["days"] as? List<String> ?: emptyList(),
+                                today = map["today"] as? String ?: "",
+                                trip_short_name = "",
+                                stop_name = ""
+                            )
+                        }
+
+                        _preferences.value = fetchedPreferences.associateBy { it.trip_id + "/" + it.stop_id }
+                        Log.d("PreferencesViewModel", "Preferences initial values set: ${_preferences.value}")
+
+                        viewModelScope.launch {
+                            val stopsDeferred = async { fetchStops() }
+                            val tripsDeferred = async { fetchTrips() }
+
+                            awaitAll(stopsDeferred, tripsDeferred)
+                            updatePreferenceData()
+                            Log.d("PreferencesViewModel", "Preferences updated with stop and trip data: ${_preferences.value}")
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.e("PreferencesViewModel", "Error fetching user document: $exception")
+                    }
+            } catch (e: Exception) {
+                Log.e("PreferencesViewModel", "An unexpected error occurred during preference fetching: $e")
             }
+        }
+    }
+
+    private suspend fun fetchStops() {
+        try {
+            val snapshot = firestore.collection("stops").get().await()
+            for (document in snapshot.documents) {
+                val stop = Stop(document.id, document.getString("stop_name") ?: "")
+                stops[stop.stop_id] = stop
+            }
+        } catch (e: Exception) {
+            Log.e("PreferencesViewModel", "Error fetching stops: $e")
+        }
+    }
+
+    private suspend fun fetchTrips() {
+        try {
+            val snapshot = firestore.collection("trips").get().await()
+            for (document in snapshot.documents) {
+                trips[document.id] = document.getString("trip_short_name") ?: ""
+            }
+        } catch (e: Exception) {
+            Log.e("PreferencesViewModel", "Error fetching trips: $e")
+        }
+    }
+
+    private fun updatePreferenceData() {
+        val updatedPreferences = _preferences.value.mapValues { (_, preference) ->
+            preference.copy(
+                stop_name = stops[preference.stop_id]?.stop_name ?: "",
+                trip_short_name = trips[preference.trip_id] ?: ""
+            )
+        }
+        _preferences.value = updatedPreferences
     }
 
     fun getPreference(tripId: String, stopId: String): Preference? {
