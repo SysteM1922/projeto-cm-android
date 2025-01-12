@@ -81,7 +81,7 @@ fun DriverPage(
                 try {
                     // Attempt to get the last known location
                     val location: Location? = fusedLocationClient.lastLocation.await()
-                    
+
                     location?.let {
                         val lat = it.latitude
                         val lng = it.longitude

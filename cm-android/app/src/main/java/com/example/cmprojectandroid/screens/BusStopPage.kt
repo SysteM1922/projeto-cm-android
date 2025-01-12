@@ -39,6 +39,7 @@ fun StopPage(
 
     var showModal by remember { mutableStateOf(false) }
     var selectedBus by remember { mutableStateOf<Bus?>(null) }
+    var highlightedBusId by remember { mutableStateOf<String?>(null) }
 
     // fetch the buses from the view model
     LaunchedEffect(stopId) {
@@ -79,7 +80,9 @@ fun StopPage(
                         onBellIconClick = { bus ->
                             selectedBus = bus
                             showModal = true
-                        }
+                            highlightedBusId = bus.busId
+                        },
+                        isHighlighted = bus.busId == highlightedBusId
                     )
                 }
             }
@@ -91,10 +94,12 @@ fun StopPage(
                         onDismiss = {
                             // Logic to dismiss the modal
                             showModal = false
+                            highlightedBusId = null
                         },
                         onSaveComplete = { days: List<String>, today: String ->
                             // Logic to handle after saving is complete
                             showModal = false
+                            highlightedBusId = null
                             // Additional logic if necessary
                             it.days = days
                             it.today = today
@@ -109,12 +114,18 @@ fun StopPage(
 }
 
 @Composable
-fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit, onBellIconClick: (Bus) -> Unit) {
+fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit, onBellIconClick: (Bus) -> Unit, isHighlighted: Boolean) {
+    val backgroundColor = if (isHighlighted) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Highlighted color
+    } else {
+        MaterialTheme.colorScheme.surface // Default color
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onBusDetailsClick(bus) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Row(
             modifier = Modifier
