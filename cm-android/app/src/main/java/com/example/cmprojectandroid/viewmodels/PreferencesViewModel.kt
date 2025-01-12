@@ -118,15 +118,30 @@ class PreferencesViewModel : ViewModel() {
 
     fun updatePreferences(preference: Preference) {
         val user = auth.currentUser ?: return
-        var oldPreference : Preference? = null
+        val key = "${preference.trip_id}/${preference.stop_id}"
 
-        if (_preferences.value.containsKey(preference.trip_id + "/" + preference.stop_id)) {
-            oldPreference = _preferences.value[preference.trip_id + "/" + preference.stop_id]!!
-        } else {
-            oldPreference = Preference(trip_id = preference.trip_id, stop_id = preference.stop_id, days = emptyList(), today = "")
+        // adding, updating, or removing the preference
+        val isEmptyPreference = preference.days.isEmpty() && preference.today.isEmpty()
+
+        if (_preferences.value.containsKey(key)) {
+            val oldPreference = _preferences.value[key]
+
+            if (oldPreference != null) {
+                updateNotificationTopics(oldPreference, preference)
+            }
         }
 
-        updateNotificationTopics(oldPreference, preference)
+        if (isEmptyPreference) {
+            // Remove the entry both locally and in Firestore if it's empty
+            _preferences.value = _preferences.value.toMutableMap().apply {
+                remove(key)
+            }
+        } else {
+            // Update the local preference map
+            _preferences.value = _preferences.value.toMutableMap().apply {
+                put(key, preference)
+            }
+        }
 
         firestore.collection("users")
             .document(user.uid)
@@ -134,10 +149,9 @@ class PreferencesViewModel : ViewModel() {
                 "preferences",
                 _preferences.value.values.toList()
             )
-
-        _preferences.value = _preferences.value.toMutableMap().apply {
-            put(preference.trip_id + "/" + preference.stop_id, preference)
-        }
+            .addOnFailureListener { e ->
+                Log.e("PreferencesViewModel", "Failed to update preferences: $e")
+            }
     }
 
     private fun updateNotificationTopics(oldPreference: Preference, newPreference: Preference) {
