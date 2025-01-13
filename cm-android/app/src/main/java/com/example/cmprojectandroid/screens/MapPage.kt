@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,7 +58,9 @@ import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
 
 import com.example.cmprojectandroid.Model.StopOrDriver
 import com.example.cmprojectandroid.R
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.tasks.CancellationTokenSource
 
 @SuppressLint("SimpleDateFormat")
 @Composable
@@ -228,6 +232,36 @@ fun MapPage(
         }
     }
 
+    val fusedLocationProviderClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val cancellationTokenSource = remember { CancellationTokenSource() }
+
+    LaunchedEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
+            fusedLocationProviderClient.getCurrentLocation(
+                com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY,
+                cancellationTokenSource.token
+            ).addOnSuccessListener { location ->
+                location?.let {
+                    val latLng = LatLng(it.latitude, it.longitude)
+                    mapViewModel.updateUserLocation(latLng)
+                    Log.d("MapPage", "User location updated: $latLng")
+                }
+            }.addOnFailureListener { exception ->
+                Log.e("MapPage", "Failed to get user location: ${exception.message}")
+            }
+        }
+    }
+
+    val isProgrammaticMovement = remember { mutableStateOf(false) }
+    val flagCenteredUser = remember { mutableStateOf(false) }
+    LaunchedEffect(cameraPositionState.position) {
+        val initialPosition = mapViewModel.cameraPosition.value
+
+        if (cameraPositionState.position != initialPosition) {
+            // The camera position has changed, which could mean the user moved the map
+            flagCenteredUser.value = false
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
@@ -348,6 +382,51 @@ fun MapPage(
                 )
             }
         }
+
+        LaunchedEffect(cameraPositionState.position) {
+            if (isProgrammaticMovement.value) {
+                return@LaunchedEffect
+            } else {
+                flagCenteredUser.value = false
+            }
+        }
+
+        LaunchedEffect(cameraPositionState.isMoving) {
+            if (!cameraPositionState.isMoving && isProgrammaticMovement.value) {
+                isProgrammaticMovement.value = false // Reset the flag
+            }
+        }
+
+        FloatingActionButton(
+            onClick = {
+                isProgrammaticMovement.value = true
+                if (hasLocationPermission) {
+                    val userLocation = mapViewModel.userLocation.value
+                    userLocation?.let {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newLatLngZoom(it, 15f),
+                                400 // Adjust duration as needed
+                            )
+                            flagCenteredUser.value = true
+                        }
+                    }
+                } else {
+                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+          },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)  // Add this
+                .padding(16.dp),            // Add this
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.mylocation),
+                contentDescription = "Center on my location",
+                tint = if (flagCenteredUser.value) Color.Blue else MaterialTheme.colorScheme.onSurface
+            )
+        }
+
 
         if (!mapViewModel.isMapLoaded.value) {
             Box(
