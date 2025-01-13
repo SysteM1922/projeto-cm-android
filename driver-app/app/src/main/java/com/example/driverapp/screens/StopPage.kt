@@ -1,5 +1,6 @@
 package com.example.driverapp.screens
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,12 +22,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.driverapp.navigation.NavRoutes
+import com.example.driverapp.services.LocationService
 import com.example.driverapp.viewmodels.DriverViewModel
 
 @Composable
@@ -34,6 +37,7 @@ fun StopPage(
     driverViewModel: DriverViewModel,
     navController: NavController
 ) {
+    val context = LocalContext.current
     var stopName by remember { mutableStateOf("") }
     var arrivalTime by remember { mutableStateOf("") }
 
@@ -64,6 +68,10 @@ fun StopPage(
                     contentColor = Color.White
                 ),
                 onClick = {
+                    val serviceIntent = Intent(context, LocationService::class.java).apply {
+                        action = LocationService.ACTION_STOP
+                    }
+                    context.startService(serviceIntent)
                     navController.navigate(NavRoutes.DriverPage)
                     driverViewModel.updateLastStop()
                     driverViewModel.endTrip()

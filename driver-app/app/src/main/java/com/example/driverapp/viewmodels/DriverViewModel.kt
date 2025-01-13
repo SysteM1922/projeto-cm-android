@@ -1,9 +1,12 @@
 package com.example.driverapp.viewmodels
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import com.example.driverapp.Model.StopTime
+import com.example.driverapp.services.LocationService
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -18,7 +21,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 class DriverViewModel : ViewModel() {
-
     private val firestore = FirebaseFirestore.getInstance()
     private lateinit var docRef: DocumentReference
 

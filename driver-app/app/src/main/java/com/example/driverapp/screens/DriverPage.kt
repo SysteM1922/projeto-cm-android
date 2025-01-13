@@ -142,11 +142,6 @@ fun DriverPage(
                 Text("Enable Background Service")
             }
         } else {
-            val serviceIntent = Intent(context, LocationService::class.java).apply {
-                action = LocationService.ACTION_STOP
-            }
-            context.startService(serviceIntent)
-
             Spacer(modifier = Modifier.weight(0.5f))
             Text(
                 text = "Bus",
