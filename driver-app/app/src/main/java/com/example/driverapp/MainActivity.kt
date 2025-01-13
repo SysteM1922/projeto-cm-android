@@ -35,7 +35,6 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 
     val sharedViewModel: NFCViewModel by viewModels()
     var nfcAdapter: NfcAdapter? = null
-    val driverViewModel: DriverViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @SuppressLint("SourceLockedOrientationActivity")
@@ -48,8 +47,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         setContent {
             DriverAppTheme {
                 MainScreen(
-                    nfcViewModel = sharedViewModel,
-                    driverViewModel = driverViewModel
+                    nfcViewModel = sharedViewModel
                 )
             }
         }
@@ -161,7 +159,7 @@ object NFCParser {
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun MainScreen(nfcViewModel: NFCViewModel, driverViewModel: DriverViewModel) {
+fun MainScreen(nfcViewModel: NFCViewModel) {
     val navController = rememberNavController()
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
@@ -183,7 +181,7 @@ fun MainScreen(nfcViewModel: NFCViewModel, driverViewModel: DriverViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
-        NavigationHost(navController, nfcViewModel, driverViewModel, Modifier.padding(innerPadding))
+        NavigationHost(navController, nfcViewModel, modifier = Modifier.padding(innerPadding))
     }
 }
 

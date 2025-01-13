@@ -75,7 +75,7 @@ class LocationService : Service() {
                         newLocation.lat = it.latitude
                         newLocation.lng = it.longitude
                         locationRepo.updateLocation(newLocation)
-                        Log.d("LocationUpdateService", "Location updated: $newLocation")
+                        // Log.d("LocationUpdateService", "Location updated: $newLocation")
                     }
                 } catch (e: SecurityException) {
                     e.printStackTrace()

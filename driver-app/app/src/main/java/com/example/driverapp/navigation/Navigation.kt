@@ -23,9 +23,13 @@ object NavRoutes {
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun NavigationHost(navController: NavHostController,
-                   nfcViewModel: NFCViewModel = viewModel(),    // just one instance
-                   driverViewModel: DriverViewModel = viewModel(), modifier: Modifier = Modifier) {
+fun NavigationHost(
+    navController: NavHostController,
+    nfcViewModel: NFCViewModel = viewModel(),    // just one instance
+    modifier: Modifier = Modifier,
+) {
+
+    val driverViewModel = viewModel<DriverViewModel>()
 
     NavHost(
         navController,
