@@ -207,15 +207,15 @@ fun MapPage(
         return try {
             val vectorDrawable = ContextCompat.getDrawable(this, vectorResId)
             vectorDrawable?.let {
-                it.setBounds(0, 0, it.intrinsicWidth, it.intrinsicHeight)
+                it.setBounds(0, 0, 80, 80)
                 // If color is provided, mutate and set the tint
                 if (color != null) {
                     it.mutate()
                     it.setTint(color.toArgb())
                 }
                 val bitmap = Bitmap.createBitmap(
-                    it.intrinsicWidth,
-                    it.intrinsicHeight,
+                    80,
+                    80,
                     Bitmap.Config.ARGB_8888
                 )
                 val canvas = Canvas(bitmap)

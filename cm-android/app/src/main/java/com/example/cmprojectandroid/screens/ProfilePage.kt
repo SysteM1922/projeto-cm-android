@@ -26,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.cmprojectandroid.Model.Favorite
 import com.example.cmprojectandroid.Model.Preference
+import com.example.cmprojectandroid.Model.Trip
 import com.example.cmprojectandroid.R
 import com.example.cmprojectandroid.navigation.NavRoutes
 import com.example.cmprojectandroid.viewmodels.PreferencesViewModel
@@ -65,15 +66,7 @@ fun ProfilePage(
     val testDataViewModel: TestDataViewModel = viewModel()
 
     val favorites by userProfileViewModel.favorites.collectAsState()
-
-    // Mocked data for trip history and active notifications
-    val tripHistory = remember {
-        mutableStateListOf(
-            "Bus A (10:00 AM, Jan 10)",
-            "Bus B (2:30 PM, Jan 9)",
-            "Bus C (8:15 AM, Jan 8)"
-        )
-    }
+    val tripHistory by userProfileViewModel.tripHistory.collectAsState()
 
     var isTripHistoryExpanded by remember { mutableStateOf(false) }
     var isNotificationsExpanded by remember { mutableStateOf(false) }
@@ -82,6 +75,7 @@ fun ProfilePage(
     LaunchedEffect(currentUser) {
         currentUser?.uid?.let { uid ->
             userProfileViewModel.loadUserFavorites(uid)
+            userProfileViewModel.fetchTripHistory(uid)
         }
     }
 
@@ -268,7 +262,7 @@ fun <T> ExpandableSection(
 }
 
 @Composable
-fun TripHistoryCard(trip: String) {
+fun TripHistoryCard(trip: Trip) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -294,20 +288,25 @@ fun TripHistoryCard(trip: String) {
             )
 
             Column(modifier = Modifier.weight(1f)) {
-                val (busInfo, dateTime) = trip.split(" (", ")")
                 Text(
-                    text = busInfo,
+                    text = trip.trip_name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = dateTime,
+                    text = formatTimestamp(trip.timestamp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
     }
+}
+
+fun formatTimestamp(timestamp: Long): String {
+    val date = java.util.Date(timestamp)
+    val format = java.text.SimpleDateFormat("HH:mm, MMM dd", java.util.Locale.getDefault())
+    return format.format(date)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
