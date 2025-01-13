@@ -7,8 +7,8 @@ class LocationRepo {
 
     private var databaseRef = FirebaseDatabase.getInstance()
         .reference
-        .child("drivers")
-        .child("LAWRA-123")
+        .child("error")
+        .child("busId")
 
     fun changeBusId(newBusId: String) {
         databaseRef = FirebaseDatabase.getInstance()
