@@ -1,3 +1,58 @@
 serviceAccountKey.json
 .env
 venv/
+
+# General OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.pnpm-store/
+.pnp.cjs
+.pnp.loader.mjs
+
+# Firebase
+.firebase/
+firebase-debug.log
+functions/node_modules/ # Important: Ignore node_modules inside functions
+functions/.git/
+functions/.DS_Store
+.firebaserc
+
+# Eslint
+eslint.config.mjs
+firebase.json
+package-lock.json
+package.json
+
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Build and Distribution
+dist/
+build/
+*.apk
+*.ipa
+
+# Logs and Temp Files
+*.log
+tmp/
+temp/
+*.tmp
+
+# Other
+.env # If you're using environment variables, be VERY careful with this
+.history

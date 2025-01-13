@@ -86,6 +86,7 @@ fun StopPage(
                 ),
                 onClick = {
                     navController.navigate(NavRoutes.NFCPage)
+                    driverViewModel.sendArrivalNotification(stopName)
                 }
             ) {
                 Text(

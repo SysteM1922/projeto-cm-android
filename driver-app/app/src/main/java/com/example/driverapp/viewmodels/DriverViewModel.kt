@@ -7,9 +7,13 @@ import com.example.driverapp.Model.StopTime
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -235,5 +239,40 @@ class DriverViewModel : ViewModel() {
 
     fun getCurrentStopArrivalTime(): String {
         return stopTimes[lastStop].arrivalTime
+    }
+
+    private val functions = FirebaseFunctions.getInstance()
+
+    fun sendArrivalNotification(stopName: String) {
+        val calendar = Calendar.getInstance()
+
+        // Get day of week (Mon, Tue, etc.)
+        val dayOfWeek = SimpleDateFormat("EEE", Locale.ENGLISH).format(calendar.time)
+
+        // Get date in dd-MM-yyyy format
+        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).format(calendar.time)
+
+        // Create notification data
+        val message = mapOf(
+            "notification" to mapOf(
+                "title" to "Bus Arrival Update",
+                "body" to "Bus $tripName arrived at $stopName"
+            ),
+            "topics" to listOf(
+                "$actualTrip-$dayOfWeek",
+                "$actualTrip-$dateFormat"
+            )
+        )
+
+        // Call Firebase Cloud Function to send notifications
+        functions
+            .getHttpsCallable("sendMultiTopicNotification")
+            .call(message)
+            .addOnSuccessListener {
+                Log.d("DriverViewModel", "Notifications sent successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("DriverViewModel", "Error sending notifications", e)
+            }
     }
 }
