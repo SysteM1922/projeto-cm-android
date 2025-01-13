@@ -67,14 +67,30 @@ fun DriverPage(
             context,
             Manifest.permission.ACCESS_BACKGROUND_LOCATION,
         )
-        if (currentForegroundServiceStatus == PackageManager.PERMISSION_GRANTED) {
-            // Permission already granted
-            hasBackgroundServicePermission = true
-            Log.d("DriverPage", "Foreground service permission is already granted.")
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            val currentLocationServiceStatus = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            )
+            if (currentLocationServiceStatus == PackageManager.PERMISSION_GRANTED) {
+                // Permission already granted
+                hasBackgroundServicePermission = true
+                Log.d("DriverPage", "Location service permission is already granted.")
+            } else {
+                // Permission not granted, request it
+                Log.d("DriverPage", "Requesting location service permission...")
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
         } else {
-            // Permission not granted, request it
-            Log.d("DriverPage", "Requesting foreground service permission...")
-            requestPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            if (currentForegroundServiceStatus == PackageManager.PERMISSION_GRANTED) {
+                // Permission already granted
+                hasBackgroundServicePermission = true
+                Log.d("DriverPage", "Foreground service permission is already granted.")
+            } else {
+                // Permission not granted, request it
+                Log.d("DriverPage", "Requesting foreground service permission...")
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            }
         }
         if (tripId.isNotEmpty()) {
             driverViewModel.startTrip(tripId)
@@ -126,42 +142,41 @@ fun DriverPage(
                 Text("Enable Background Service")
             }
         } else {
-                val serviceIntent = Intent(context, LocationService::class.java).apply {
-                    action = LocationService.ACTION_STOP
-                }
-                context.startService(serviceIntent)
+            val serviceIntent = Intent(context, LocationService::class.java).apply {
+                action = LocationService.ACTION_STOP
+            }
+            context.startService(serviceIntent)
 
-                Spacer(modifier = Modifier.weight(0.5f))
-                Text(
-                    text = "Bus",
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Start,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = tripId,
-                    onValueChange = { tripId = it },
-                    label = { Text("Enter Trip ID") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        scope.launch {
-                            driverViewModel.startTrip(tripId)
-                            val serviceIntent = Intent(context, LocationService::class.java).apply {
-                                action = LocationService.ACTION_START
-                            }
-                            context.startService(serviceIntent)
-                            navController.navigate(NavRoutes.StopPage)
+            Spacer(modifier = Modifier.weight(0.5f))
+            Text(
+                text = "Bus",
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = tripId,
+                onValueChange = { tripId = it },
+                label = { Text("Enter Trip ID") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    scope.launch {
+                        driverViewModel.startTrip(tripId)
+                        val serviceIntent = Intent(context, LocationService::class.java).apply {
+                            action = LocationService.ACTION_START
                         }
-                    },
-                ) {
-                    Text("Start Trip")
-                }
+                        context.startService(serviceIntent)
+                        navController.navigate(NavRoutes.StopPage)
+                    }
+                },
+            ) {
+                Text("Start Trip")
+            }
             Spacer(modifier = Modifier.weight(1f))
         }
     }

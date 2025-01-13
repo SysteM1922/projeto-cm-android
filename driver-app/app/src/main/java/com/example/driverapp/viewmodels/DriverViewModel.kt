@@ -42,20 +42,23 @@ class DriverViewModel : ViewModel() {
                                 if (document.data?.get("lastStop") != null) {
                                     lastStop = document.data?.get("lastStop").toString().toInt()
                                 }
+                                if (actualTrip != "") {
+                                    firestore.collection("trips").document(actualTrip).get()
+                                        .addOnSuccessListener { doc ->
+                                            tripName = doc.data?.get("trip_short_name").toString()
+                                            Log.d("DriverViewModel", "Trip name: $tripName")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.w("DriverViewModel", "Error getting document", e)
+                                            continuation.resumeWithException(e)
+                                        }
+                                }
                             }
                             Log.d("DriverViewModel", "Actual trip: $actualTrip")
                         } else {
                             Log.d("DriverViewModel", "No such document")
                         }
-                        firestore.collection("trips").document(actualTrip).get()
-                            .addOnSuccessListener { doc ->
-                                tripName = doc.data?.get("trip_short_name").toString()
-                                Log.d("DriverViewModel", "Trip name: $tripName")
-                                continuation.resume(actualTrip)
-                            }
-                            .addOnFailureListener { e ->
-                                Log.w("DriverViewModel", "Error getting document", e)
-                            }
+                        continuation.resume(actualTrip)
                     }
                     .addOnFailureListener { exception ->
                         Log.d("DriverViewModel", "get failed with ", exception)
@@ -178,6 +181,7 @@ class DriverViewModel : ViewModel() {
                             continuation.resume("")
                         } else {
                             Log.d("DriverViewModel", "Card found")
+                            addToTravelHistory(cardId)
                             continuation.resume(documents.data?.get("user_name").toString())
                         }
                     }
