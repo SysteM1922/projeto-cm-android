@@ -261,7 +261,8 @@ class DriverViewModel : ViewModel() {
             val message = mapOf(
                 "notification" to mapOf(
                     "title" to "Bus Arrival Update",
-                    "body" to "Bus $tripName arrived at $stopName"
+                    "body" to "Bus $tripName arrived at $stopName",
+                    "stop_sequence" to lastStop
                 ),
                 "topic" to topic
             )
