@@ -19,10 +19,22 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-exports.sendMultiTopicNotification = functions.https.onCall(async (data, context) => {
-    console.log('Received data:', data); // Add this line
+exports.sendMultiTopicNotification = functions.https.onCall(async (body, context) => {
+    console.log('Received body:', body); // Add this line
     try {
-        const { notification, topic } = data;
+        console.log('data:', body.data);
+        const notification = body.data.notification;
+        console.log('notification:', notification);
+        /* data: {
+            notification: {
+                title: 'Bus Arrival Update',
+                body: 'Bus Linha 5 (Solposto) arrived at R.de Ovar - Urbanização Santiago'
+            },
+            topic: 'L5AW2-Mon'
+        }, 
+  */
+        topic = body.data.topic;
+        console.log('topic:', topic);
         
         if (!topic) {
             throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a topic.');
