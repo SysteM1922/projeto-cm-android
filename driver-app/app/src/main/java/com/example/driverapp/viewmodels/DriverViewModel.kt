@@ -258,11 +258,15 @@ class DriverViewModel : ViewModel() {
         )
 
         topics.forEach { topic ->
+
+
             val message = mapOf(
                 "notification" to mapOf(
                     "title" to "Bus Arrival Update",
-                    "body" to "Bus $tripName arrived at $stopName",
-                    "stop_sequence" to lastStop
+                    "body" to mapOf(
+                        "body" to "Bus $tripName arrived at $stopName",
+                        "stopSequence" to lastStop
+                    )
                 ),
                 "topic" to topic
             )

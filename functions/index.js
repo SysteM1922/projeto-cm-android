@@ -28,11 +28,15 @@ exports.sendMultiTopicNotification = functions.https.onCall(async (body, context
         /* data: {
             notification: {
                 title: 'Bus Arrival Update',
-                body: 'Bus Linha 5 (Solposto) arrived at R.de Ovar - Urbanização Santiago'
+                body: {
+                    body: 'Bus Linha 5 (Solposto) arrived at R.de Ovar - Urbanização Santiago',
+                    stopSequence: 0
+                }
             },
             topic: 'L5AW2-Mon'
         }, 
-  */
+        */
+
         topic = body.data.topic;
         console.log('topic:', topic);
         
@@ -40,8 +44,13 @@ exports.sendMultiTopicNotification = functions.https.onCall(async (body, context
             throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a topic.');
         }
         
+        const newNotif = {
+            title: notification.title,
+            body: notification.body.body
+        };
+
         const message = {
-            notification: notification,
+            notification: newNotif,
             topic: topic
         };
 
