@@ -46,6 +46,8 @@ fun DriverPage(
     var hasBackgroundServicePermission by remember { mutableStateOf(false) }
 
     var tripId by remember { mutableStateOf("") }
+    var tripName by remember { mutableStateOf("") }
+    var tripColor by remember { mutableStateOf("") }
 
     val scope = rememberCoroutineScope()
 
@@ -94,9 +96,14 @@ fun DriverPage(
         }
         if (tripId.isNotEmpty()) {
             driverViewModel.startTrip(tripId)
+            tripName = driverViewModel.tripName
+            tripColor = driverViewModel.tripColor
             val serviceIntent = Intent(context, LocationService::class.java).apply {
                 action = LocationService.ACTION_START
             }
+            serviceIntent.putExtra("tripId", tripId)
+            serviceIntent.putExtra("tripName", tripName)
+            serviceIntent.putExtra("tripColor", tripColor)
             context.startService(serviceIntent)
             navController.navigate(NavRoutes.StopPage)
         }
@@ -160,11 +167,16 @@ fun DriverPage(
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
+                    tripName = driverViewModel.tripName
+                    tripColor = driverViewModel.tripColor
                     scope.launch {
                         driverViewModel.startTrip(tripId)
                         val serviceIntent = Intent(context, LocationService::class.java).apply {
                             action = LocationService.ACTION_START
                         }
+                        serviceIntent.putExtra("tripId", tripId)
+                        serviceIntent.putExtra("tripName", tripName)
+                        serviceIntent.putExtra("tripColor", tripColor)
                         context.startService(serviceIntent)
                         navController.navigate(NavRoutes.StopPage)
                     }

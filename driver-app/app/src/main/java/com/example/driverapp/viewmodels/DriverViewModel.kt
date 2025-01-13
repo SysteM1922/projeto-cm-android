@@ -1,12 +1,9 @@
 package com.example.driverapp.viewmodels
 
-import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import com.example.driverapp.Model.StopTime
-import com.example.driverapp.services.LocationService
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -25,7 +22,9 @@ class DriverViewModel : ViewModel() {
     private lateinit var docRef: DocumentReference
 
     var actualTrip = ""
+    var routeId = ""
     var tripName = ""
+    var tripColor = ""
     var lastStop = 0
     private val _stopTimes = mutableStateListOf<StopTime>()
     val stopTimes: List<StopTime> get() = _stopTimes
@@ -48,23 +47,34 @@ class DriverViewModel : ViewModel() {
                                 if (document.data?.get("lastStop") != null) {
                                     lastStop = document.data?.get("lastStop").toString().toInt()
                                 }
-                                if (actualTrip != "") {
+                                if (actualTrip.isNotEmpty()) {
                                     firestore.collection("trips").document(actualTrip).get()
                                         .addOnSuccessListener { doc ->
                                             tripName = doc.data?.get("trip_short_name").toString()
-                                            Log.d("DriverViewModel", "Trip name: $tripName")
+                                            routeId = doc.data?.get("route_id").toString()
+                                            firestore.collection("routes")
+                                                .document(routeId).get()
+                                                .addOnSuccessListener { route ->
+                                                    tripColor =
+                                                        route.data?.get("route_color").toString()
+
+                                                    Log.d("DriverViewModel", "Trip name: $tripName")
+                                                    Log.d("DriverViewModel", "Trip color: $tripColor")
+                                                    continuation.resume(actualTrip)
+                                                }
                                         }
                                         .addOnFailureListener { e ->
                                             Log.w("DriverViewModel", "Error getting document", e)
                                             continuation.resumeWithException(e)
                                         }
+                                } else {
+                                    continuation.resume(actualTrip)
                                 }
                             }
                             Log.d("DriverViewModel", "Actual trip: $actualTrip")
                         } else {
                             Log.d("DriverViewModel", "No such document")
                         }
-                        continuation.resume(actualTrip)
                     }
                     .addOnFailureListener { exception ->
                         Log.d("DriverViewModel", "get failed with ", exception)
@@ -126,8 +136,14 @@ class DriverViewModel : ViewModel() {
                 firestore.collection("trips").document(tripId).get()
                     .addOnSuccessListener { document ->
                         tripName = document.data?.get("trip_short_name").toString()
-                        Log.d("DriverViewModel", "Trip name: $tripName")
-                        continuation.resume(null)
+                        routeId = document.data?.get("route_id").toString()
+                        firestore.collection("routes")
+                            .document(routeId).get().addOnSuccessListener { route ->
+                                tripColor = route.data?.get("route_color").toString()
+                                Log.d("DriverViewModel", "Trip name: $tripName")
+                                Log.d("DriverViewModel", "Trip color: $tripColor")
+                                continuation.resume(null)
+                            }
                     }
                     .addOnFailureListener { e ->
                         Log.w("DriverViewModel", "Error getting document", e)
@@ -140,7 +156,9 @@ class DriverViewModel : ViewModel() {
 
     fun endTrip() {
         this.actualTrip = ""
-        // clear stop times
+        this.routeId = ""
+        this.tripName = ""
+        this.tripColor = ""
         _stopTimes.clear()
         this.lastStop = 0
         docRef.update("actualTrip", null)
