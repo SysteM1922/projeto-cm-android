@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 
     val sharedViewModel: NFCViewModel by viewModels()
     var nfcAdapter: NfcAdapter? = null
+    val driverViewModel: DriverViewModel by viewModels()
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @SuppressLint("SourceLockedOrientationActivity")
@@ -47,7 +48,8 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         setContent {
             DriverAppTheme {
                 MainScreen(
-                    nfcViewModel = sharedViewModel
+                    nfcViewModel = sharedViewModel,
+                    driverViewModel = driverViewModel
                 )
             }
         }
@@ -82,11 +84,10 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
     }
 
     override fun onTagDiscovered(tag: Tag?) {
-        Log.d("ReadNFCActivity", "Status: " + sharedViewModel.isNFCPageVisible.toString())
         if (!sharedViewModel.isNFCPageVisible) {
             return
         }
-
+        sharedViewModel.cardID.value = ""
         val ndef = Ndef.get(tag)
         if (ndef != null) {
             try {
@@ -95,22 +96,6 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
                 if (ndef.isConnected) {
                     val ndefMessage = ndef.ndefMessage
                     parserNDEFMessage(ndefMessage)
-                    // Iterate through NDEF records to extract data
-                    for (record in ndefMessage.records) {
-                        // Assuming the record contains text
-                        val payload = record.payload
-                        // Decode payload to string using UTF-8 encoding
-                        val text = String(payload, charset("UTF-8"))
-
-                        // Do something with the read text
-                        runOnUiThread {
-                            Toast.makeText(
-                                applicationContext,
-                                "Read NFC Tag: $text",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
                 } else {
                     // Tag is not NDEF formatted
                     runOnUiThread {
@@ -159,7 +144,10 @@ object NFCParser {
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun MainScreen(nfcViewModel: NFCViewModel) {
+fun MainScreen(
+    nfcViewModel: NFCViewModel,
+    driverViewModel: DriverViewModel
+) {
     val navController = rememberNavController()
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
@@ -181,7 +169,7 @@ fun MainScreen(nfcViewModel: NFCViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
-        NavigationHost(navController, nfcViewModel, modifier = Modifier.padding(innerPadding))
+        NavigationHost(navController, nfcViewModel, driverViewModel, modifier = Modifier.padding(innerPadding))
     }
 }
 

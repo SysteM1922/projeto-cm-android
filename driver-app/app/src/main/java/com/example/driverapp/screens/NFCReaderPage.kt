@@ -31,11 +31,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.rememberNavController
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.driverapp.R
 import com.example.driverapp.navigation.NavRoutes
@@ -58,37 +55,36 @@ fun NFCReaderPage(
     val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
     val lifecycleScope = rememberCoroutineScope()
     var isNfcEnabled by remember { mutableStateOf(false) }
+    var cardID by remember { mutableStateOf("") }
     var showModal by remember { mutableStateOf(false) }
-    val cardID = nfcViewModel.cardID.value // CHANGED this -- we can just access it
-    var oldCardID = ""
+    var oldCardID by remember { mutableStateOf("") }
     val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-    var showScreen by remember { mutableStateOf(false) }
 
     fun checkNfcStatus() {
         isNfcEnabled = nfcAdapter?.isEnabled ?: false
     }
 
-    @Composable
-    fun handleCardReaded(cardID: String) {
-
+    suspend fun handleCardReaded() {
+        Log.d("ReadNFCActivity", "Handling card readed")
         val activeNetwork = connectivityManager.activeNetworkInfo
         val isConnected = activeNetwork?.isConnectedOrConnecting == true
 
         if (!isConnected) {
-            NoConnectionScreen()
-        }
-
-        if (cardID.isEmpty()) {
-            UnrecognizedCardScreen()
+            navController.navigate(NavRoutes.NoConnectionScreen)
+        } else if (cardID.isEmpty()) {
+            navController.navigate(NavRoutes.UnrecognizedCardScreen)
         } else {
             val user = driverViewModel.validateCard(cardID)
             if (user.isNotEmpty()) {
-                SucessScreen(user)
+                navController.navigate(NavRoutes.SucessScreen)
             } else {
-                UnrecognizedUserScreen()
+                navController.navigate(NavRoutes.UnrecognizedUserScreen)
             }
         }
+        oldCardID = ""
+        cardID = ""
+        nfcViewModel.cardID.value = ""
     }
 
     LaunchedEffect(Unit) {
@@ -101,17 +97,13 @@ fun NFCReaderPage(
                 while (true) {
                     delay(500)
                     checkNfcStatus()
+                    cardID = nfcViewModel.cardID.value
                     if (!isNfcEnabled) {
                         showModal = true
                     } else if (oldCardID != cardID) {
-                        oldCardID = cardID
-                        showScreen = true
-                        lifecycleScope.launch {
-                            delay(2000)
-                            showScreen = false
-                        }
+                        Log.d("ReadNFCActivity", "Card ID: $cardID")
+                        handleCardReaded()
                     }
-
                 }
             }
         }
@@ -124,77 +116,75 @@ fun NFCReaderPage(
     }
 
     Box {
-        if (showScreen) {
-            handleCardReaded(cardID)
-        } else {
-            if (showModal) {
-                AlertDialog(
-                    onDismissRequest = { showModal = false },
-                    title = { Text("NFC Error") },
-                    text = { Text("NFC is not enabled on this device. Please enable it.") },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                showModal = false
-                                //context.startActivity(android.content.Intent(android.provider.Settings.ACTION_NFC_SETTINGS))
-                            }
-                        ) {
-                            Text("Ok")
+        if (showModal) {
+            AlertDialog(
+                onDismissRequest = { showModal = false },
+                title = { Text("NFC Error") },
+                text = { Text("NFC is not enabled on this device. Please enable it.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showModal = false
+                            //context.startActivity(android.content.Intent(android.provider.Settings.ACTION_NFC_SETTINGS))
                         }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                showModal = false
-                                // exit the app
-                            }
-                        ) {
-                            Text("Cancel")
-                        }
+                    ) {
+                        Text("Ok")
                     }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showModal = false
+                            // exit the app
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Spacer(modifier = Modifier.padding(20.dp))
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            )
+            {
+                Text(
+                    text = "Waiting for NFC card...",
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
+                Icon(
+                    painter = painterResource(id = R.drawable.contactless),
+                    contentDescription = "NFC Icon",
+                )
+                Text(
+                    text = "Please tap your card on the back of this device to validate.",
+                    fontSize = 24.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(20.dp)
                 )
             }
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Spacer(modifier = Modifier.padding(20.dp))
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+            Button(
+                modifier = Modifier.padding(bottom = 20.dp),
+                onClick = {
+                    nfcViewModel.isNFCPageVisible = false
+                    driverViewModel.updateLastStop()
+                    navController.navigate(NavRoutes.StopPage)
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50),
+                    contentColor = Color.White
                 )
-                {
-                    Text(
-                        text = "Waiting for NFC card...",
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 20.dp)
-                    )
-                    Icon(
-                        painter = painterResource(id = R.drawable.contactless),
-                        contentDescription = "NFC Icon",
-                    )
-                    Text(
-                        text = "Please tap your card on the back of this device to validate.",
-                        fontSize = 24.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(20.dp)
-                    )
-                }
-                Button(
-                    onClick = {
-                        navController.navigate(NavRoutes.StopPage)
-                        driverViewModel.updateLastStop()
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4CAF50),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text("DRIVE")
-                }
+            ) {
+                Text("DRIVE")
             }
         }
     }
