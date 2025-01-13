@@ -1,10 +1,13 @@
 package com.example.cmprojectandroid.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cmprojectandroid.Model.Favorite
+import com.example.cmprojectandroid.Model.Trip
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -16,6 +19,9 @@ class UserProfileViewModel : ViewModel() {
 
     private val _favorites = MutableStateFlow<List<Favorite>>(emptyList())
     val favorites: StateFlow<List<Favorite>> = _favorites
+
+    private val _tripHistory = MutableStateFlow<List<Trip>>(emptyList())
+    val tripHistory: StateFlow<List<Trip>> = _tripHistory
 
     fun loadUserFavorites(uid: String) {
         viewModelScope.launch {
@@ -34,7 +40,6 @@ class UserProfileViewModel : ViewModel() {
             }
         }
     }
-
 
     fun removeFavorite(favorite: Favorite) {
         viewModelScope.launch {
@@ -55,6 +60,27 @@ class UserProfileViewModel : ViewModel() {
                 ).await()
             } catch (e: Exception) {
                 // Handle errors (e.g., log them)
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun fetchTripHistory(uid: String) {
+        viewModelScope.launch {
+            try {
+                Log.d("UserProfileViewModel", "user uid: ${auth.currentUser?.uid}")
+                val document = firestore.collection("users").document(uid).get().await()
+                val tripsList = document.get("travel_history") as? List<Map<String, Any>> ?: listOf()
+                val trips = tripsList.map { map ->
+                    Trip(
+                        trip_id = map["trip_id"] as? String ?: "",
+                        trip_name = map["trip_name"] as? String ?: "",
+                        timestamp = map["timestamp"] as? Long ?: 0
+                    )
+                }
+                _tripHistory.value = trips
+                Log.d("UserProfileViewModel", "Fetched ${trips} trips")
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
