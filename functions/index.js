@@ -20,16 +20,20 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 
 exports.sendMultiTopicNotification = functions.https.onCall(async (data, context) => {
+    console.log('Received data:', data); // Add this line
     try {
-        const { notification, topics } = data;
+        const { notification, topic } = data;
         
-        // Send notification to each topic
-        const messages = topics.map(topic => ({
+        if (!topic) {
+            throw new functions.https.HttpsError('invalid-argument', 'The function must be called with a topic.');
+        }
+        
+        const message = {
             notification: notification,
             topic: topic
-        }));
+        };
 
-        const response = await admin.messaging().sendAll(messages);
+        const response = await admin.messaging().send(message);
         
         console.log('Successfully sent messages:', response);
         return { success: true, result: response };

@@ -252,27 +252,33 @@ class DriverViewModel : ViewModel() {
         // Get date in dd-MM-yyyy format
         val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).format(calendar.time)
 
-        // Create notification data
-        val message = mapOf(
-            "notification" to mapOf(
-                "title" to "Bus Arrival Update",
-                "body" to "Bus $tripName arrived at $stopName"
-            ),
-            "topics" to listOf(
-                "$actualTrip-$dayOfWeek",
-                "$actualTrip-$dateFormat"
-            )
+        val topics = listOf(
+            "$actualTrip-$dayOfWeek",
+            "$actualTrip-$dateFormat"
         )
 
-        // Call Firebase Cloud Function to send notifications
-        functions
-            .getHttpsCallable("sendMultiTopicNotification")
-            .call(message)
-            .addOnSuccessListener {
-                Log.d("DriverViewModel", "Notifications sent successfully")
-            }
-            .addOnFailureListener { e ->
-                Log.e("DriverViewModel", "Error sending notifications", e)
-            }
+        topics.forEach { topic ->
+            val message = mapOf(
+                "notification" to mapOf(
+                    "title" to "Bus Arrival Update",
+                    "body" to "Bus $tripName arrived at $stopName"
+                ),
+                "topic" to topic
+            )
+
+            Log.d("DriverViewModel", "Sending message: $message")
+
+            // Call Firebase Cloud Function to send notifications
+            functions
+                .getHttpsCallable("sendMultiTopicNotification")
+                .call(message)
+                .addOnSuccessListener {
+                    Log.d("DriverViewModel", "Notification sent successfully to topic: $topic")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("DriverViewModel", "Error sending notification to topic: $topic", e)
+                    Log.e("DriverViewModel", "Error details:", e)
+                }
+        }
     }
 }

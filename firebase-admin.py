@@ -4,7 +4,7 @@ from firebase_admin import auth
 
 firebase_admin.initialize_app(credentials.Certificate('serviceAccountKey.json'))
 
-uid = "FtlVfH7utAhoJ7UZ4uN2w9AsVOH3"
+uid = "Qj7SarNgnxfN6hukqjkbYl2i0so2"
 
 try:
     auth.set_custom_user_claims(uid, {'role': 'driver'})
