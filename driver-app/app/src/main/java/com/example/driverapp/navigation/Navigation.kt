@@ -1,33 +1,28 @@
 package com.example.driverapp.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModel
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.example.driverapp.MainActivity
 import com.example.driverapp.screens.DriverPage
 import com.example.driverapp.screens.LoginPage
 import com.example.driverapp.screens.NFCReaderPage
-import com.example.driverapp.screens.ProfilePage
+import com.example.driverapp.screens.StopPage
+import com.example.driverapp.viewmodels.DriverViewModel
 import com.example.driverapp.viewmodels.NFCViewModel
 
 object NavRoutes {
     const val Login = "login"
     const val DriverPage = "driver_page"
     const val NFCPage = "nfc_page"
-    const val Profile = "profile"
+    const val StopPage = "stop_page"
 }
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun NavigationHost(navController: NavHostController, nfcViewModel: NFCViewModel, modifier: Modifier = Modifier) {
+fun NavigationHost(navController: NavHostController, nfcViewModel: NFCViewModel, driverViewModel: DriverViewModel, modifier: Modifier = Modifier) {
 
     NavHost(
         navController,
@@ -53,14 +48,23 @@ fun NavigationHost(navController: NavHostController, nfcViewModel: NFCViewModel,
                     navController.navigate(NavRoutes.Login) {
                         popUpTo(0)
                     }
-                }
+                },
+                driverViewModel = driverViewModel,
+                navController = navController,
             )
         }
         composable(NavRoutes.NFCPage) {
-            NFCReaderPage(nfcViewModel)
+            NFCReaderPage(
+                nfcViewModel = nfcViewModel,
+                driverViewModel = driverViewModel,
+                navController = navController,
+            )
         }
-        composable(NavRoutes.Profile) {
-            ProfilePage(navController)
+        composable(NavRoutes.StopPage) {
+            StopPage(
+                driverViewModel = driverViewModel,
+                navController = navController
+            )
         }
     }
 }

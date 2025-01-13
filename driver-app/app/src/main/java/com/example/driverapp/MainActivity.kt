@@ -1,13 +1,13 @@
 package com.example.driverapp
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 import android.nfc.FormatException
 import android.nfc.NdefMessage
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.Ndef
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -15,21 +15,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.driverapp.navigation.NavRoutes
 import com.example.driverapp.navigation.NavigationHost
-import com.example.driverapp.services.LocationService
 import com.example.driverapp.ui.theme.DriverAppTheme
+import com.example.driverapp.viewmodels.DriverViewModel
 import com.example.driverapp.viewmodels.NFCViewModel
 import com.google.firebase.auth.FirebaseAuth
 import java.io.IOException
@@ -38,7 +35,9 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
 
     val sharedViewModel: NFCViewModel by viewModels()
     var nfcAdapter: NfcAdapter? = null
+    val driverViewModel: DriverViewModel by viewModels()
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +47,10 @@ class MainActivity : ComponentActivity(), NfcAdapter.ReaderCallback {
         enableEdgeToEdge()
         setContent {
             DriverAppTheme {
-                MainScreen(nfcViewModel = sharedViewModel)
+                MainScreen(
+                    nfcViewModel = sharedViewModel,
+                    driverViewModel = driverViewModel
+                )
             }
         }
         requestedOrientation = SCREEN_ORIENTATION_PORTRAIT
@@ -157,8 +159,9 @@ object NFCParser {
 }
 
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun MainScreen(nfcViewModel: NFCViewModel) {
+fun MainScreen(nfcViewModel: NFCViewModel, driverViewModel: DriverViewModel) {
     val navController = rememberNavController()
     val auth = FirebaseAuth.getInstance()
     val currentUser = auth.currentUser
@@ -180,7 +183,7 @@ fun MainScreen(nfcViewModel: NFCViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
-        NavigationHost(navController, nfcViewModel, Modifier.padding(innerPadding))
+        NavigationHost(navController, nfcViewModel, driverViewModel, Modifier.padding(innerPadding))
     }
 }
 

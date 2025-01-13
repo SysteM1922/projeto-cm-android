@@ -16,31 +16,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import com.example.driverapp.repositories.LocationRepo
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.driverapp.navigation.NavRoutes
 import com.example.driverapp.services.LocationService
+import com.example.driverapp.viewmodels.DriverViewModel
 
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun DriverPage(
     onLogout: () -> Unit,
+    driverViewModel: DriverViewModel,
+    navController: NavHostController,
 ) {
-    val firestore = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
-    val driver_id = auth.currentUser?.uid
-    val display_name = auth.currentUser?.displayName
-    var trips = emptyList<String>()
-    var actualTrip = ""
-    var lastStop = ""
+    val displayName = auth.currentUser?.displayName
 
     val context = LocalContext.current
     var hasBackgroundServicePermission by remember { mutableStateOf(false) }
-    var currentLat by remember { mutableStateOf<Double?>(null) }
-    var currentLng by remember { mutableStateOf<Double?>(null) }
+
+    var tripId by remember { mutableStateOf("") }
+    var stopSequence by remember { mutableStateOf(0) }
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -68,7 +73,13 @@ fun DriverPage(
             Log.d("DriverPage", "Requesting foreground service permission...")
             requestPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         }
+
+        driverViewModel.fetchDriverData(auth.currentUser?.uid)
+
+        driverViewModel.currentPage = if (driverViewModel.isTripActive()) 1 else 0
     }
+
+    val stopTimes by remember { derivedStateOf { driverViewModel.stopTimes } }
 
     Column(
         modifier = Modifier
@@ -92,17 +103,8 @@ fun DriverPage(
                 modifier = Modifier.size(28.dp)
             )
         }
-        Text(text = "Driver: $display_name", style = MaterialTheme.typography.headlineMedium)
-        // Display latitude and longitude if available
-        currentLat?.let { lat ->
-            currentLng?.let { lng ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Location: lat=$lat, lng=$lng",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
+        Text(text = "Driver: $displayName", style = MaterialTheme.typography.headlineMedium)
+
         Spacer(modifier = Modifier.height(16.dp))
 
         if (!hasBackgroundServicePermission) {
@@ -122,23 +124,57 @@ fun DriverPage(
                 Text("Enable Background Service")
             }
         } else {
-            Button(onClick = {
-                // Start the location service
-                val serviceIntent = Intent(context, LocationService::class.java).apply {
-                    action = LocationService.ACTION_START
+            if (driverViewModel.currentPage == 0) {
+                // Input trip ID
+                Spacer(modifier = Modifier.weight(0.5f))
+                Text(
+                    text = "Bus",
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = tripId,
+                    onValueChange = { tripId = it },
+                    label = { Text("Enter Trip ID") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    onClick = {
+                        driverViewModel.startTrip(tripId)
+                        val serviceIntent = Intent(context, LocationService::class.java).apply {
+                            action = LocationService.ACTION_START
+                        }
+                        context.startService(serviceIntent)
+                    },
+                ) {
+                    Text("Start Trip")
                 }
-                context.startService(serviceIntent)
-            }) {
-                Text("Start next trip")
-            }
-            Button(onClick = {
-                // Stop the location service
-                val serviceIntent = Intent(context, LocationService::class.java).apply {
-                    action = LocationService.ACTION_STOP
+                Spacer(modifier = Modifier.weight(1f))
+            } else if (driverViewModel.currentPage == 1) {
+                // Display Stop Button
+                Log.d("DriverPage", "StopPage")
+                stopSequence++
+                if (stopSequence >= stopTimes.size) {
+                    stopSequence = 0
+                    val serviceIntent = Intent(context, LocationService::class.java).apply {
+                        action = LocationService.ACTION_STOP
+                    }
+                    context.startService(serviceIntent)
+                    driverViewModel.endTrip()
+                } else {
+                    navController.navigate(NavRoutes.StopPage)
                 }
-                context.startService(serviceIntent)
-            }) {
-                Text("Stop trip")
+
+            } else if (driverViewModel.currentPage == 2) {
+                Log.d("DriverPage", "NFCPage")
+                // Open NFC Page
+                navController.navigate(NavRoutes.NFCPage)
             }
         }
     }
