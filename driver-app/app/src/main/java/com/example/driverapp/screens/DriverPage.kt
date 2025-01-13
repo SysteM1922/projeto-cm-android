@@ -81,6 +81,32 @@ fun DriverPage(
 
     val stopTimes by remember { derivedStateOf { driverViewModel.stopTimes } }
 
+    // Handle navigation based on currentPage -- maybe this is a better approach
+//    LaunchedEffect(driverViewModel.currentPage) {
+//        when (driverViewModel.currentPage) {
+//            1 -> {
+//                stopSequence++
+//                Log.d("DriverPage", "Stop Sequence: $stopSequence")
+//                Log.d("DriverPage", "Stop Times size: ${stopTimes.size}")
+//                if (stopSequence >= stopTimes.size) {
+//                    stopSequence = 0
+//                    val serviceIntent = Intent(context, LocationService::class.java).apply {
+//                        action = LocationService.ACTION_STOP
+//                    }
+//                    context.startService(serviceIntent)
+//                    driverViewModel.endTrip()
+//                } else {
+//                    Log.d("DriverPage", "Navigating to StopPage")
+//                    navController.navigate(NavRoutes.StopPage)
+//                }
+//            }
+//            2 -> {
+//                Log.d("DriverPage", "Navigating to NFCPage")
+//                navController.navigate(NavRoutes.NFCPage)
+//            }
+//        }
+//    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -156,21 +182,29 @@ fun DriverPage(
                     Text("Start Trip")
                 }
                 Spacer(modifier = Modifier.weight(1f))
+
+            // SE DERES UNCOMMENT AQUELE LAUNCHED EFFECT LÁ EM CIMA, NÃO PRECISAS DESTES 2 "ELSE IF" acho eu
             } else if (driverViewModel.currentPage == 1) {
                 // Display Stop Button
                 Log.d("DriverPage", "StopPage")
-                stopSequence++
-                if (stopSequence >= stopTimes.size) {
-                    stopSequence = 0
-                    val serviceIntent = Intent(context, LocationService::class.java).apply {
-                        action = LocationService.ACTION_STOP
+                // go to stop page automatically
+                LaunchedEffect(Unit) {
+                    // this runs only once
+                    stopSequence++
+                    Log.d("DriverPage", "Stop Sequence: $stopSequence")
+                    Log.d("DriverPage", "Stop Times size: ${stopTimes.size}")
+                    if (stopSequence >= stopTimes.size) {
+                        stopSequence = 0
+                        val serviceIntent = Intent(context, LocationService::class.java).apply {
+                            action = LocationService.ACTION_STOP
+                        }
+                        context.startService(serviceIntent)
+                        driverViewModel.endTrip()
+                    } else {
+                        Log.d("DriverPage", "Navigating to StopPage")
+                        navController.navigate(NavRoutes.StopPage)
                     }
-                    context.startService(serviceIntent)
-                    driverViewModel.endTrip()
-                } else {
-                    navController.navigate(NavRoutes.StopPage)
                 }
-
             } else if (driverViewModel.currentPage == 2) {
                 Log.d("DriverPage", "NFCPage")
                 // Open NFC Page

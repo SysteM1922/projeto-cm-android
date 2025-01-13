@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.example.driverapp.screens.DriverPage
@@ -22,7 +23,9 @@ object NavRoutes {
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
-fun NavigationHost(navController: NavHostController, nfcViewModel: NFCViewModel, driverViewModel: DriverViewModel, modifier: Modifier = Modifier) {
+fun NavigationHost(navController: NavHostController,
+                   nfcViewModel: NFCViewModel = viewModel(),    // just one instance
+                   driverViewModel: DriverViewModel = viewModel(), modifier: Modifier = Modifier) {
 
     NavHost(
         navController,

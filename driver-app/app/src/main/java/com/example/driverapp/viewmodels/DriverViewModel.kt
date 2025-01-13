@@ -20,8 +20,14 @@ class DriverViewModel : ViewModel() {
 
     var actualTrip = ""
     var lastStop = 0
-    val stopTimes = mutableStateListOf<StopTime>()
+    private val _stopTimes = mutableStateListOf<StopTime>()
+    val stopTimes: List<StopTime> get() = _stopTimes
     var currentPage by mutableIntStateOf(0)
+
+    init {
+        Log.d("DriverViewModel", "DriverViewModel created")
+    }
+
 
     fun fetchDriverData(driverId: String?) {
         viewModelScope.launch {
@@ -46,14 +52,16 @@ class DriverViewModel : ViewModel() {
     }
 
     private fun fetchStops() {
+        Log.d("DriverViewModel", "Fetching stops for trip_id: $actualTrip")
         viewModelScope.launch {
             val querySnapshot = firestore.collection("stop_times")
                 .whereEqualTo("trip_id", actualTrip)
                 .get()
                 .await()
 
+            Log.d("DriverViewModel", "Number of stops fetched: ${querySnapshot.size()}")
             for (document in querySnapshot) {
-                stopTimes.add(
+                _stopTimes.add(
                     StopTime(
                         document.data["arrival_time"].toString(),
                         document.data["departure_time"].toString(),
@@ -64,11 +72,16 @@ class DriverViewModel : ViewModel() {
                 )
             }
             currentPage = 1
+            Log.d("DriverViewModel", "Stops fetched -> $stopTimes")
         }
     }
 
     fun isTripActive(): Boolean {
         return actualTrip != ""
+    }
+
+    fun navigateToPage(page: Int) {
+        currentPage = page
     }
 
     fun startTrip(tripId: String) {
@@ -89,7 +102,7 @@ class DriverViewModel : ViewModel() {
         this.actualTrip = ""
         docRef.update("actualTrip", null)
             .addOnSuccessListener {
-                Log.d("DriverViewModel", "DocumentSnapshot successfully updated!")
+                Log.d("DriverViewModel", "DocumentSnapshot successfully updated! end")
             }
             .addOnFailureListener { e ->
                 Log.w("DriverViewModel", "Error updating document", e)
@@ -101,6 +114,7 @@ class DriverViewModel : ViewModel() {
             .addOnFailureListener { e ->
                 Log.w("DriverViewModel", "Error updating document", e)
             }
+        navigateToPage(0)
     }
 
     fun validateCard(cardId: String): String {
