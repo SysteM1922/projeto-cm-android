@@ -16,6 +16,7 @@ import java.util.Calendar
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.properties.Delegates
 
 class DriverViewModel : ViewModel() {
     private val firestore = FirebaseFirestore.getInstance()
@@ -105,6 +106,27 @@ class DriverViewModel : ViewModel() {
                         }
                         _stopTimes.sortBy { it.stopSequence }
                         continuation.resume(Unit)
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.d("DriverViewModel", "Error getting documents: ", exception)
+                        continuation.resumeWithException(exception)
+                    }
+            }
+        }
+    }
+
+    suspend fun isTripValid(tripId: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            suspendCancellableCoroutine { continuation ->
+                firestore.collection("trips").document(tripId).get()
+                    .addOnSuccessListener { document ->
+                        if (document.data.isNullOrEmpty()) {
+                            Log.d("DriverViewModel", "Trip not found")
+                            continuation.resume(false)
+                        } else {
+                            Log.d("DriverViewModel", "Trip found")
+                            continuation.resume(true)
+                        }
                     }
                     .addOnFailureListener { exception ->
                         Log.d("DriverViewModel", "Error getting documents: ", exception)

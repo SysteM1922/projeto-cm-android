@@ -48,6 +48,7 @@ fun DriverPage(
     var tripId by remember { mutableStateOf("") }
     var tripName by remember { mutableStateOf("") }
     var tripColor by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var hasBackgroundServicePermission by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
@@ -115,22 +116,6 @@ fun DriverPage(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (tripId.isNotEmpty()) {
-            driverViewModel.startTrip(tripId)
-            tripName = driverViewModel.tripName
-            tripColor = driverViewModel.tripColor
-            val serviceIntent = Intent(context, LocationService::class.java).apply {
-                action = LocationService.ACTION_START
-            }
-            serviceIntent.putExtra("tripId", tripId)
-            serviceIntent.putExtra("tripName", tripName)
-            serviceIntent.putExtra("tripColor", tripColor)
-            context.startService(serviceIntent)
-            navController.navigate(NavRoutes.StopPage)
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -171,6 +156,23 @@ fun DriverPage(
                 Text("Enable Permission")
             }
         } else {
+            LaunchedEffect(Unit) {
+                tripId = driverViewModel.fetchDriverData(auth.currentUser?.uid ?: "")
+                Log.d("DriverPage", "Trip ID: $tripId")
+                if (tripId.isNotEmpty()) {
+                    driverViewModel.startTrip(tripId)
+                    tripName = driverViewModel.tripName
+                    tripColor = driverViewModel.tripColor
+                    val serviceIntent = Intent(context, LocationService::class.java).apply {
+                        action = LocationService.ACTION_START
+                    }
+                    serviceIntent.putExtra("tripId", tripId)
+                    serviceIntent.putExtra("tripName", tripName)
+                    serviceIntent.putExtra("tripColor", tripColor)
+                    context.startService(serviceIntent)
+                    navController.navigate(NavRoutes.StopPage)
+                }
+            }
             Spacer(modifier = Modifier.weight(0.5f))
             Text(
                 text = "Bus",
@@ -189,9 +191,13 @@ fun DriverPage(
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    tripName = driverViewModel.tripName
-                    tripColor = driverViewModel.tripColor
                     scope.launch {
+                        if (!driverViewModel.isTripValid(tripId)) {
+                            errorMessage = "Please enter a trip ID"
+                            return@launch
+                        }
+                        tripName = driverViewModel.tripName
+                        tripColor = driverViewModel.tripColor
                         driverViewModel.startTrip(tripId)
                         val serviceIntent = Intent(context, LocationService::class.java).apply {
                             action = LocationService.ACTION_START
@@ -205,6 +211,14 @@ fun DriverPage(
                 },
             ) {
                 Text("Start Trip")
+            }
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    errorMessage!!,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
             Spacer(modifier = Modifier.weight(1f))
         }
