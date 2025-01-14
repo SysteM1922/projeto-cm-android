@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.driverapp.navigation.NavRoutes
 import com.example.driverapp.services.LocationService
 import com.example.driverapp.viewmodels.DriverViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -43,57 +44,78 @@ fun DriverPage(
     val displayName = auth.currentUser?.displayName
 
     val context = LocalContext.current
-    var hasBackgroundServicePermission by remember { mutableStateOf(false) }
 
     var tripId by remember { mutableStateOf("") }
     var tripName by remember { mutableStateOf("") }
     var tripColor by remember { mutableStateOf("") }
+    var hasBackgroundServicePermission by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
 
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            hasBackgroundServicePermission = true
-            Log.d("DriverPage", "Foreground service permission granted.")
-        } else {
-            hasBackgroundServicePermission = false
-            Log.d("DriverPage", "Foreground service permission denied.")
+    var askText by remember { mutableStateOf("") }
+
+    // check background location permission
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        askText =
+            "You need to set the location permission to 'Allow all the time' for this service."
+        val permissions = arrayOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        )
+
+        hasBackgroundServicePermission = permissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        val requestPermissionLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                Log.d("DriverPage", "Background service permission granted")
+                hasBackgroundServicePermission = true
+            } else {
+                Log.d("DriverPage", "Backgorund service permission denied")
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            while (!hasBackgroundServicePermission) {
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                delay(1000)
+            }
+        }
+    } else {
+        askText = "You need to accept the location permission for this service."
+        val permissions = arrayOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+
+        hasBackgroundServicePermission = permissions.all {
+            ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        val requestPermissionLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                Log.d("DriverPage", "Foreground service permission granted")
+                hasBackgroundServicePermission = true
+            } else {
+                Log.d("DriverPage", "Foreground service permission denied")
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            while (!hasBackgroundServicePermission) {
+                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                delay(1000)
+            }
         }
     }
 
     LaunchedEffect(Unit) {
-        tripId = driverViewModel.fetchDriverData(auth.currentUser?.uid)
-        val currentForegroundServiceStatus = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-        )
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            val currentLocationServiceStatus = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-            )
-            if (currentLocationServiceStatus == PackageManager.PERMISSION_GRANTED) {
-                // Permission already granted
-                hasBackgroundServicePermission = true
-                Log.d("DriverPage", "Location service permission is already granted.")
-            } else {
-                // Permission not granted, request it
-                Log.d("DriverPage", "Requesting location service permission...")
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        } else {
-            if (currentForegroundServiceStatus == PackageManager.PERMISSION_GRANTED) {
-                // Permission already granted
-                hasBackgroundServicePermission = true
-                Log.d("DriverPage", "Foreground service permission is already granted.")
-            } else {
-                // Permission not granted, request it
-                Log.d("DriverPage", "Requesting foreground service permission...")
-                requestPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-            }
-        }
         if (tripId.isNotEmpty()) {
             driverViewModel.startTrip(tripId)
             tripName = driverViewModel.tripName
@@ -135,18 +157,18 @@ fun DriverPage(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (!hasBackgroundServicePermission) {
-            Text("You need to accept the foreground service permission for this service.")
+            Text(askText)
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = {
                 // Attempt to request again
-                Log.d("DriverPage", "Requesting foreground service permission...")
+                Log.d("DriverPage", "Requesting permission...")
                 // open app location settings
                 val intent = Intent()
                 intent.action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                 intent.data = android.net.Uri.parse("package:" + context.packageName)
                 context.startActivity(intent)
             }) {
-                Text("Enable Background Service")
+                Text("Enable Permission")
             }
         } else {
             Spacer(modifier = Modifier.weight(0.5f))
