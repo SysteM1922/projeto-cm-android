@@ -1,5 +1,6 @@
 package com.example.cmprojectandroid.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.cmprojectandroid.Model.Stop
@@ -26,7 +27,13 @@ class BusDetailsViewModel : ViewModel() {
                     .get()
                     .await()
 
-                val stopIds = stopTimesSnapshot.documents.mapNotNull { it.getString("stop_id") }
+                // get stop_id and stop_sequence from stop_times
+                val stopIds = stopTimesSnapshot.documents.mapNotNull { doc ->
+                    hashMapOf(
+                        "stop_id" to doc.getString("stop_id"),
+                        "stop_sequence" to doc.get("stop_sequence")
+                    )
+                }
 
                 if (stopIds.isEmpty()) {
                     _stops.value = emptyList()
@@ -35,7 +42,7 @@ class BusDetailsViewModel : ViewModel() {
 
                 // Step 2: Query stops collection to get details for the fetched stop_ids
                 val stopsSnapshot = firestore.collection("stops")
-                    .whereIn("stop_id", stopIds)
+                    .whereIn("stop_id", stopIds.mapNotNull { it["stop_id"] })
                     .get()
                     .await()
 
@@ -45,17 +52,21 @@ class BusDetailsViewModel : ViewModel() {
                     val stopName = doc.getString("stop_name")
                     val stopLat = doc.getDouble("stop_lat")
                     val stopLon = doc.getDouble("stop_lon")
+                    val stopSeq = stopIds.find { it["stop_id"] == stopId }?.get("stop_sequence").toString().toIntOrNull()
 
                     if (stopId != null && stopName != null && stopLat != null && stopLon != null) {
                         Stop(
                             stop_id = stopId,
                             stop_name = stopName,
                             stop_lat = stopLat,
-                            stop_lon = stopLon
+                            stop_lon = stopLon,
+                            stop_sequence = stopSeq ?: 0
                         )
                     } else null
                 }
-
+                Log.d("BusDetailsViewModel", "Fetched stops: $stops")
+                stops.sortedBy { it.stop_sequence }
+                Log.d("BusDetailsViewModel", "Sorted stops: $stops")
                 // Update the state flow with fetched stops
                 _stops.value = stops
             } catch (e: Exception) {

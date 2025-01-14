@@ -348,11 +348,13 @@ fun NotificationCard(preference: Preference, viewModel: PreferencesViewModel, on
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
-                Text(
-                    text = "Days: ${preference.days.joinToString()}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
+                if (preference.days.isNotEmpty()) {
+                    Text(
+                        text = "Days: ${preference.days.joinToString()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
                 if (preference.today != "") {
                     Text(
                         text = "Today: ${preference.today}",

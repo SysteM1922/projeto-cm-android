@@ -55,12 +55,12 @@ class StopViewModel : ViewModel() {
                 val buses = tripsSnapshot.documents.mapNotNull { doc ->
                     val tripId = doc.getString("trip_id")
                     val busName = doc.getString("trip_short_name")
-                    val arrivalTime = tripIdToDepartureTime[tripId]
-                    if (tripId != null && busName != null && arrivalTime != null) {
+                    val departureTime = tripIdToDepartureTime[tripId]
+                    if (tripId != null && busName != null && departureTime != null) {
                         Bus(
                             busId = tripId,
                             busName = busName,
-                            arrivalTime = arrivalTime
+                            departureTime = departureTime
                         )
                     } else null
                 }
