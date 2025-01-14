@@ -196,9 +196,9 @@ fun DriverPage(
                             errorMessage = "Please enter a trip ID"
                             return@launch
                         }
+                        driverViewModel.startTrip(tripId)
                         tripName = driverViewModel.tripName
                         tripColor = driverViewModel.tripColor
-                        driverViewModel.startTrip(tripId)
                         val serviceIntent = Intent(context, LocationService::class.java).apply {
                             action = LocationService.ACTION_START
                         }

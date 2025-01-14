@@ -11,6 +11,7 @@ class LocationRepo {
         .child("busId")
 
     fun changeBusId(newBusId: String) {
+        if (newBusId.isEmpty()) return
         databaseRef = FirebaseDatabase.getInstance()
             .reference
             .child("drivers")

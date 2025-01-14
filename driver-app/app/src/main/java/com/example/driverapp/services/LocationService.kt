@@ -42,7 +42,13 @@ class LocationService : Service() {
         busName = intent?.getStringExtra("tripName") ?: ""
         busColor = intent?.getStringExtra("tripColor") ?: ""
         Log.d("LocationService", "Bus ID: $busId, Bus Name: $busName, Bus Color: $busColor")
-        return super.onStartCommand(intent, flags, startId)
+        return START_NOT_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // Este método é chamado quando o driver fecha a aplicação
+        stopSelf()
     }
 
     private fun start() {

@@ -144,31 +144,33 @@ class DriverViewModel : ViewModel() {
                 docRef.update("actualTrip", tripId)
                     .addOnSuccessListener {
                         Log.d("DriverViewModel", "DocumentSnapshot successfully updated!")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w("DriverViewModel", "Error updating document", e)
-                    }
-                docRef.update("lastStop", 0)
-                    .addOnSuccessListener {
-                        Log.d("DriverViewModel", "DocumentSnapshot successfully updated! end")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w("DriverViewModel", "Error updating document", e)
-                    }
-                firestore.collection("trips").document(tripId).get()
-                    .addOnSuccessListener { document ->
-                        tripName = document.data?.get("trip_short_name").toString()
-                        routeId = document.data?.get("route_id").toString()
-                        firestore.collection("routes")
-                            .document(routeId).get().addOnSuccessListener { route ->
-                                tripColor = route.data?.get("route_color").toString()
-                                Log.d("DriverViewModel", "Trip name: $tripName")
-                                Log.d("DriverViewModel", "Trip color: $tripColor")
-                                continuation.resume(null)
+                        docRef.update("lastStop", 0)
+                            .addOnSuccessListener {
+                                Log.d("DriverViewModel", "DocumentSnapshot successfully updated! end")
+                                firestore.collection("trips").document(tripId).get()
+                                    .addOnSuccessListener { document ->
+                                        tripName = document.data?.get("trip_short_name").toString()
+                                        routeId = document.data?.get("route_id").toString()
+                                        firestore.collection("routes")
+                                            .document(routeId).get().addOnSuccessListener { route ->
+                                                tripColor = route.data?.get("route_color").toString()
+                                                Log.d("DriverViewModel", "Trip name: $tripName")
+                                                Log.d("DriverViewModel", "Trip color: $tripColor")
+                                                continuation.resume(null)
+                                            }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.w("DriverViewModel", "Error getting document", e)
+                                        continuation.resumeWithException(e)
+                                    }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.w("DriverViewModel", "Error updating document", e)
+                                continuation.resumeWithException(e)
                             }
                     }
                     .addOnFailureListener { e ->
-                        Log.w("DriverViewModel", "Error getting document", e)
+                        Log.w("DriverViewModel", "Error updating document", e)
                         continuation.resumeWithException(e)
                     }
             }
