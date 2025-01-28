@@ -15,7 +15,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
-
+import com.google.firebase.firestore.FirebaseFirestore
 
 
 @Composable
@@ -86,6 +86,12 @@ fun SignUpPage(onNavigateBack: () -> Unit, onSignUpSuccess: () -> Unit) {
                                     if (updateTask.isSuccessful) {
                                         // Sign-up and profile update successful
                                         onSignUpSuccess()
+                                        val firestore = FirebaseFirestore.getInstance()
+                                        firestore.collection("users").document(user.uid).set(
+                                            hashMapOf(
+                                                "user_name" to userName
+                                            )
+                                        )
                                     } else {
                                         // Profile update failed
                                         errorMessage = updateTask.exception?.message ?: "Sign-up failed"

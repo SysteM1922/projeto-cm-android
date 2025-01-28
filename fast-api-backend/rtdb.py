@@ -21,7 +21,7 @@ app = FastAPI()
 if not firebase_admin._apps:
     cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS"))
     firebase_admin.initialize_app(cred, {
-        "databaseURL": "https://projeto-cm-android-773dc-default-rtdb.europe-west1.firebasedatabase.app"
+        "databaseURL": # URL or Service Account Key method
     })
     print("Firebase app initialized successfully!")
 
