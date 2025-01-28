@@ -5,5 +5,5 @@ data class RealtimeLocation(
     var lat: Double? = null,
     var lng: Double? = null,
     var bus_name: String,
-    var bus_color: String,
+    var color: String,
 )

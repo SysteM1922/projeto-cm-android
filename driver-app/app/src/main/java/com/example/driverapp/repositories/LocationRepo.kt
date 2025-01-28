@@ -5,10 +5,18 @@ import com.google.firebase.database.*
 
 class LocationRepo {
 
-    private val databaseRef = FirebaseDatabase.getInstance()
+    private var databaseRef = FirebaseDatabase.getInstance()
         .reference
-        .child("drivers")
-        .child("LAWRA-123")
+        .child("error")
+        .child("busId")
+
+    fun changeBusId(newBusId: String) {
+        if (newBusId.isEmpty()) return
+        databaseRef = FirebaseDatabase.getInstance()
+            .reference
+            .child("drivers")
+            .child(newBusId)
+    }
 
     fun updateLocation(newLocation: RealtimeLocation) {
         databaseRef.setValue(newLocation)

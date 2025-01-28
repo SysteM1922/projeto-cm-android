@@ -1,6 +1,5 @@
 package com.example.driverapp.services
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -25,6 +24,10 @@ class LocationService : Service() {
     private val locationRepo = LocationRepo()
     private val scope = CoroutineScope(Dispatchers.IO)
 
+    private var busId = ""
+    private var busName = ""
+    private var busColor = ""
+
     companion object{
         const val ACTION_START = "ACTION_START"
         const val ACTION_STOP = "ACTION_STOP"
@@ -35,7 +38,17 @@ class LocationService : Service() {
             ACTION_START -> start()
             ACTION_STOP -> stop()
         }
-        return super.onStartCommand(intent, flags, startId)
+        busId = intent?.getStringExtra("tripId") ?: ""
+        busName = intent?.getStringExtra("tripName") ?: ""
+        busColor = intent?.getStringExtra("tripColor") ?: ""
+        Log.d("LocationService", "Bus ID: $busId, Bus Name: $busName, Bus Color: $busColor")
+        return START_NOT_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // Este método é chamado quando o driver fecha a aplicação
+        stopSelf()
     }
 
     private fun start() {
@@ -62,10 +75,11 @@ class LocationService : Service() {
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(this@LocationService)
 
             var newLocation = RealtimeLocation(
-                bus_id = "LAWRA-123",
-                bus_name = "Bus Nig",
-                bus_color = "Blue"
+                bus_id = busId,
+                bus_name = busName,
+                color = busColor,
             )
+            locationRepo.changeBusId(busId)
             locationRepo.updateLocation(newLocation)
 
             while (true) {
@@ -75,7 +89,7 @@ class LocationService : Service() {
                         newLocation.lat = it.latitude
                         newLocation.lng = it.longitude
                         locationRepo.updateLocation(newLocation)
-                        // Log.d("LocationUpdateService", "Location updated: $newLocation")
+                        Log.d("LocationUpdateService", "Location updated: $newLocation")
                     }
                 } catch (e: SecurityException) {
                     e.printStackTrace()

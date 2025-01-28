@@ -80,18 +80,26 @@ fun StopPage(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(buses) { bus ->
-                    BusItem(
-                        bus = bus,
-                        onBusDetailsClick = { selectedBus ->
-                            navController.navigate("bus_details/${selectedBus.busId}/${Uri.encode(selectedBus.busName)}")
-                        },
-                        onBellIconClick = { bus ->
-                            selectedBus = bus
-                            showModal = true
-                            highlightedBusId = bus.busId
-                        },
-                        isHighlighted = bus.busId == highlightedBusId
-                    )
+                    if (bus.departureTime.isNotEmpty()) {
+                        BusItem(
+                            bus = bus,
+                            onBusDetailsClick = { selectedBus ->
+                                navController.navigate(
+                                    "bus_details/${selectedBus.busId}/${
+                                        Uri.encode(
+                                            selectedBus.busName
+                                        )
+                                    }"
+                                )
+                            },
+                            onBellIconClick = { bus ->
+                                selectedBus = bus
+                                showModal = true
+                                highlightedBusId = bus.busId
+                            },
+                            isHighlighted = bus.busId == highlightedBusId
+                        )
+                    }
                 }
             }
             if (showModal && selectedBus != null) {
@@ -122,7 +130,12 @@ fun StopPage(
 }
 
 @Composable
-fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit, onBellIconClick: (Bus) -> Unit, isHighlighted: Boolean) {
+fun BusItem(
+    bus: Bus,
+    onBusDetailsClick: (Bus) -> Unit,
+    onBellIconClick: (Bus) -> Unit,
+    isHighlighted: Boolean
+) {
     val backgroundColor = if (isHighlighted) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) // Highlighted color
     } else {
@@ -148,7 +161,7 @@ fun BusItem(bus: Bus, onBusDetailsClick: (Bus) -> Unit, onBellIconClick: (Bus) -
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Arrival: ${bus.arrivalTime}",
+                    text = "Departure: ${bus.departureTime}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

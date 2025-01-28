@@ -1,5 +1,6 @@
 package com.example.cmprojectandroid.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.State
@@ -27,6 +28,13 @@ class MapViewModel : ViewModel() {
 
     private val _isBusesSelected = MutableStateFlow(true)   // initially buses are selected
     val isBusesSelected: StateFlow<Boolean> = _isBusesSelected
+
+    private val _userLocation = mutableStateOf<LatLng?>(null)
+    val userLocation: State<LatLng?> = _userLocation
+
+    fun updateUserLocation(location: LatLng) {
+        _userLocation.value = location
+    }
 
     fun setFavoritesFilter(selected: Boolean) {
         _isFavoritesSelected.value = selected

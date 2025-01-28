@@ -1,5 +1,6 @@
 package com.example.cmprojectandroid.services
 
+import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.delay
@@ -24,6 +25,9 @@ object PushNotificationManager {
 class NotificationService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // If datastore allows it, we can receive the notification else we can ignore it
+        val stopSequence = remoteMessage.data["stop_sequence"]
+        Log.d("NotificationService", "Received stop sequence: $stopSequence")
+
         if (PushNotificationManager.getDataReceived() == 0) {
             return
         }

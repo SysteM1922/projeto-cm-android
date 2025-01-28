@@ -7,19 +7,25 @@ import com.example.driverapp.Model.StopTime
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.properties.Delegates
 
 class DriverViewModel : ViewModel() {
-
     private val firestore = FirebaseFirestore.getInstance()
     private lateinit var docRef: DocumentReference
 
     var actualTrip = ""
+    var routeId = ""
     var tripName = ""
+    var tripColor = ""
     var lastStop = 0
     private val _stopTimes = mutableStateListOf<StopTime>()
     val stopTimes: List<StopTime> get() = _stopTimes
@@ -42,23 +48,34 @@ class DriverViewModel : ViewModel() {
                                 if (document.data?.get("lastStop") != null) {
                                     lastStop = document.data?.get("lastStop").toString().toInt()
                                 }
-                                if (actualTrip != "") {
+                                if (actualTrip.isNotEmpty()) {
                                     firestore.collection("trips").document(actualTrip).get()
                                         .addOnSuccessListener { doc ->
                                             tripName = doc.data?.get("trip_short_name").toString()
-                                            Log.d("DriverViewModel", "Trip name: $tripName")
+                                            routeId = doc.data?.get("route_id").toString()
+                                            firestore.collection("routes")
+                                                .document(routeId).get()
+                                                .addOnSuccessListener { route ->
+                                                    tripColor =
+                                                        route.data?.get("route_color").toString()
+
+                                                    Log.d("DriverViewModel", "Trip name: $tripName")
+                                                    Log.d("DriverViewModel", "Trip color: $tripColor")
+                                                    continuation.resume(actualTrip)
+                                                }
                                         }
                                         .addOnFailureListener { e ->
                                             Log.w("DriverViewModel", "Error getting document", e)
                                             continuation.resumeWithException(e)
                                         }
+                                } else {
+                                    continuation.resume(actualTrip)
                                 }
                             }
                             Log.d("DriverViewModel", "Actual trip: $actualTrip")
                         } else {
                             Log.d("DriverViewModel", "No such document")
                         }
-                        continuation.resume(actualTrip)
                     }
                     .addOnFailureListener { exception ->
                         Log.d("DriverViewModel", "get failed with ", exception)
@@ -98,6 +115,27 @@ class DriverViewModel : ViewModel() {
         }
     }
 
+    suspend fun isTripValid(tripId: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            suspendCancellableCoroutine { continuation ->
+                firestore.collection("trips").document(tripId).get()
+                    .addOnSuccessListener { document ->
+                        if (document.data.isNullOrEmpty()) {
+                            Log.d("DriverViewModel", "Trip not found")
+                            continuation.resume(false)
+                        } else {
+                            Log.d("DriverViewModel", "Trip found")
+                            continuation.resume(true)
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.d("DriverViewModel", "Error getting documents: ", exception)
+                        continuation.resumeWithException(exception)
+                    }
+            }
+        }
+    }
+
     suspend fun startTrip(tripId: String) {
         return withContext(Dispatchers.IO) {
             suspendCancellableCoroutine<Void?> { continuation ->
@@ -106,25 +144,33 @@ class DriverViewModel : ViewModel() {
                 docRef.update("actualTrip", tripId)
                     .addOnSuccessListener {
                         Log.d("DriverViewModel", "DocumentSnapshot successfully updated!")
+                        docRef.update("lastStop", 0)
+                            .addOnSuccessListener {
+                                Log.d("DriverViewModel", "DocumentSnapshot successfully updated! end")
+                                firestore.collection("trips").document(tripId).get()
+                                    .addOnSuccessListener { document ->
+                                        tripName = document.data?.get("trip_short_name").toString()
+                                        routeId = document.data?.get("route_id").toString()
+                                        firestore.collection("routes")
+                                            .document(routeId).get().addOnSuccessListener { route ->
+                                                tripColor = route.data?.get("route_color").toString()
+                                                Log.d("DriverViewModel", "Trip name: $tripName")
+                                                Log.d("DriverViewModel", "Trip color: $tripColor")
+                                                continuation.resume(null)
+                                            }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.w("DriverViewModel", "Error getting document", e)
+                                        continuation.resumeWithException(e)
+                                    }
+                            }
+                            .addOnFailureListener { e ->
+                                Log.w("DriverViewModel", "Error updating document", e)
+                                continuation.resumeWithException(e)
+                            }
                     }
                     .addOnFailureListener { e ->
                         Log.w("DriverViewModel", "Error updating document", e)
-                    }
-                docRef.update("lastStop", 0)
-                    .addOnSuccessListener {
-                        Log.d("DriverViewModel", "DocumentSnapshot successfully updated! end")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w("DriverViewModel", "Error updating document", e)
-                    }
-                firestore.collection("trips").document(tripId).get()
-                    .addOnSuccessListener { document ->
-                        tripName = document.data?.get("trip_short_name").toString()
-                        Log.d("DriverViewModel", "Trip name: $tripName")
-                        continuation.resume(null)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w("DriverViewModel", "Error getting document", e)
                         continuation.resumeWithException(e)
                     }
             }
@@ -134,7 +180,9 @@ class DriverViewModel : ViewModel() {
 
     fun endTrip() {
         this.actualTrip = ""
-        // clear stop times
+        this.routeId = ""
+        this.tripName = ""
+        this.tripColor = ""
         _stopTimes.clear()
         this.lastStop = 0
         docRef.update("actualTrip", null)
@@ -235,5 +283,51 @@ class DriverViewModel : ViewModel() {
 
     fun getCurrentStopArrivalTime(): String {
         return stopTimes[lastStop].arrivalTime
+    }
+
+    private val functions = FirebaseFunctions.getInstance()
+
+    fun sendArrivalNotification(stopName: String) {
+        val calendar = Calendar.getInstance()
+
+        // Get day of week (Mon, Tue, etc.)
+        val dayOfWeek = SimpleDateFormat("EEE", Locale.ENGLISH).format(calendar.time)
+
+        // Get date in dd-MM-yyyy format
+        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.ENGLISH).format(calendar.time)
+
+        val topics = listOf(
+            "$actualTrip-$dayOfWeek",
+            "$actualTrip-$dateFormat"
+        )
+
+        topics.forEach { topic ->
+
+
+            val message = mapOf(
+                "notification" to mapOf(
+                    "title" to "Bus Arrival Update",
+                    "body" to mapOf(
+                        "body" to "Bus $tripName arrived at $stopName",
+                        "stopSequence" to lastStop
+                    )
+                ),
+                "topic" to topic
+            )
+
+            Log.d("DriverViewModel", "Sending message: $message")
+
+            // Call Firebase Cloud Function to send notifications
+            functions
+                .getHttpsCallable("sendMultiTopicNotification")
+                .call(message)
+                .addOnSuccessListener {
+                    Log.d("DriverViewModel", "Notification sent successfully to topic: $topic")
+                }
+                .addOnFailureListener { e ->
+                    Log.e("DriverViewModel", "Error sending notification to topic: $topic", e)
+                    Log.e("DriverViewModel", "Error details:", e)
+                }
+        }
     }
 }
